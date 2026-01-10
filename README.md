@@ -9,12 +9,10 @@ Team Members
   ID: 20230104108
 
 
-
 - Thouhidul Islam 
   Role: Back-end Developer
   Email: thouhid.cse.20230104106@aust.edu
   ID: 20230104106
-
 
 
 - S.M. Rashid Sakin
