@@ -3,32 +3,23 @@ LawConnect is a web-based online crime reporting system built with Laravel that 
 
 Team Members
 
-Prottoy Saha Dip
-
-Role: Team Lead
-
-Email: prottoy.cse.20230104108@aust.edu
-
-ID: 20230104108
+- Prottoy Saha Dip
+  Role: Team Lead
+  Email: prottoy.cse.20230104108@aust.edu
+  ID: 20230104108
 
 
 
-Thouhidul Islam 
-
-Role: Back-end Developer
-
-Email: thouhid.cse.20230104106@aust.edu
-
-ID: 20230104106
+- Thouhidul Islam 
+  Role: Back-end Developer
+  Email: thouhid.cse.20230104106@aust.edu
+  ID: 20230104106
 
 
 
-S.M. Rashid Sakin
-
-Role: Front-end Developer
-
-Email: rashid.cse.20230104102@aust.edu
-
-ID: 20230104102
+- S.M. Rashid Sakin
+  Role: Front-end Developer
+  Email: rashid.cse.20230104102@aust.edu
+  ID: 20230104102
 
 
