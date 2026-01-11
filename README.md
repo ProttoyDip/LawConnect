@@ -104,6 +104,10 @@ GET    /admin/analytics
 ```
 
 ---
+UI Design :
+https://drive.google.com/drive/folders/1hUNqsnLwtJfmVjsj9OrXvJyqs51tl0aa?usp=share_link
+
+---
 
 ## Technology Stack
 - **Backend:** Laravel (PHP)
