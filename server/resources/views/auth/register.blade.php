@@ -2,7 +2,10 @@
 @section('title', 'Register – LawConnect')
 
 @section('content')
-<div class="max-w-md mx-auto bg-white rounded-lg shadow p-8 mt-12">
+<div class="max-w-md mx-auto bg-white/80 backdrop-blur-md border border-white/20 shadow-xl rounded-2xl p-8 mt-12 transform transition-all hover:scale-[1.02] duration-300">
+    <div class="text-center mb-4">
+        <img src="{{ asset('logo.jpeg') }}" alt="LawConnect Logo" style="height: 64px;" class="mx-auto">
+    </div>
     <h2 class="text-2xl font-bold text-center mb-6">Create Account</h2>
 
     <form method="POST" action="{{ url('/auth/register') }}">
