@@ -5,7 +5,7 @@
 <div class="max-w-2xl mx-auto bg-white rounded-lg shadow p-8">
     <h2 class="text-2xl font-bold mb-6">Submit a Crime Report</h2>
 
-    <form method="POST" action="{{ url('/api/crime-report') }}" enctype="multipart/form-data">
+    <form method="POST" action="{{ route('crime-reports.store') }}" enctype="multipart/form-data">
         @csrf
 
         <div class="mb-4">
