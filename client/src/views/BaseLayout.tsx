@@ -41,9 +41,21 @@ const BaseLayout: React.FC<BaseLayoutProps> = ({ children }) => {
   return (
     <div className="layout">
       <header className="d-flex align-items-center my-1 bg-light navbar-mx">
+<<<<<<< Updated upstream
         <h3 className="d-flex align-items-center gap-2 mb-0">
           <Link className="text-decoration-none text-dark d-flex align-items-center gap-2" to="/dashboard" style={{ transition: 'transform 0.2s' }} onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.05)')} onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}>
+=======
+        <h3>
+          <Link 
+            className="text-decoration-none text-dark" 
+            to="/"
+          >
+>>>>>>> Stashed changes
             LawConnect
+          </Link>
+        </h3>
+        <h3 className="d-flex align-items-center gap-2 mb-0 ms-2">
+          <Link className="text-decoration-none text-dark d-flex align-items-center gap-2" to="/dashboard">
             <img src="/logo.jpeg" alt="LawConnect Logo" style={{ height: 36 }} />
           </Link>
         </h3>
@@ -68,6 +80,13 @@ const BaseLayout: React.FC<BaseLayoutProps> = ({ children }) => {
               <li className="nav-item">
                 <Button variant="outline-secondary" className="me-2" onClick={() => navigate("/reports")}>
                   All Reports
+                </Button>
+              </li>
+            )}
+            {user?.role === "admin" && (
+              <li className="nav-item">
+                <Button variant="outline-primary" className="me-2" onClick={() => navigate("/admin")}>
+                  Admin
                 </Button>
               </li>
             )}

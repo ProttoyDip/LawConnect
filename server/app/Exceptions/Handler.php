@@ -2,7 +2,10 @@
 
 namespace App\Exceptions;
 
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -48,33 +51,44 @@ class Handler extends ExceptionHandler
      */
     public function render($request, Throwable $exception)
     {
-        $message = $this->getMessage($exception);
+        // Let validation errors return their own 422 with field-level messages
+        if ($exception instanceof ValidationException) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed.',
+                'errors'  => $exception->errors(),
+            ], $exception->status);
+        }
+
+        // Model not found → 404
+        if ($exception instanceof ModelNotFoundException) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Resource not found.',
+            ], 404);
+        }
+
+        // Respect HTTP status codes from HttpExceptions (401, 403, 404, etc.)
+        if ($exception instanceof HttpException) {
+            return response()->json([
+                'success' => false,
+                'message' => $exception->getMessage() ?: 'HTTP error.',
+            ], $exception->getStatusCode());
+        }
+
+        // Everything else — expose the real message for debugging
+        $status = method_exists($exception, 'getStatusCode')
+            ? $exception->getStatusCode()
+            : 500;
 
         return response()->json([
-            'success' => false,
-            'message' => $message,
-        ], 200);
+            'success'   => false,
+            'message'   => $exception->getMessage() ?: 'An unexpected error occurred.',
+            'exception' => get_class($exception),
+            'file'      => $exception->getFile(),
+            'line'      => $exception->getLine(),
+            // Remove 'trace' in production; keep for debugging:
+            'trace'     => collect($exception->getTrace())->take(5)->toArray(),
+        ], $status);
     }
-
-
-
-    /**
-     * Get the error message from the exception.
-     *
-     * @param \Throwable $exception
-     * @return string
-     */
-    protected function getMessage(Throwable $exception): string
-    {
-        if ($exception instanceof ValidationException) {
-            return 'Validation failed.';
-        }
-
-        if ($exception instanceof ModelNotFoundException) {
-            return 'Resource not found.';
-        }
-
-        return $exception->getMessage() ?: 'An unexpected error occurred.';
-    }
-
 }

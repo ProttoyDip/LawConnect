@@ -37,14 +37,14 @@ Route::middleware(['auth:sanctum', 'log.api'])->group(function () {
     Route::delete('/crime-report/{id}', [CrimeReportController::class, 'destroy'])->middleware('role:admin');
 
     // Crime Reports – list all (police + admin)
-    Route::get('/crime-reports', [CrimeReportController::class, 'index'])->middleware('role:police,admin');
+    Route::get('/crime-reports', [CrimeReportController::class, 'index'])->middleware('role:police|admin');
 
     // Evidence
-    Route::post('/crime-report/{id}/evidence', [EvidenceController::class, 'store'])->middleware('role:citizen,police');
+    Route::post('/crime-report/{id}/evidence', [EvidenceController::class, 'store'])->middleware('role:citizen|police');
     Route::delete('/evidence/{id}',            [EvidenceController::class, 'destroy'])->middleware('role:admin');
 
     // Status Updates
-    Route::put('/crime-report/{id}/status',    [StatusUpdateController::class, 'update'])->middleware('role:police,admin');
+    Route::put('/crime-report/{id}/status',    [StatusUpdateController::class, 'update'])->middleware('role:police|admin');
     Route::get('/crime-report/{id}/timeline',  [StatusUpdateController::class, 'timeline'])->middleware('case.owner');
 
     // Police Assignment (admin only)

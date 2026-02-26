@@ -26,6 +26,7 @@ export interface CrimeReport {
   user_id: number;
   created_at: string;
   updated_at: string;
+  user?: User;
 }
 
 /* ──────────────────────────── Client ─────────────────────────── */
@@ -54,7 +55,7 @@ class ApiClient {
 
   /* ── Auth ───────────────────────────────────────────────── */
 
-  async register(name: string, email: string, password: string, password_confirmation: string, role: string = 'citizen') {
+  async register(name: string, email: string, password: string, password_confirmation: string, role: string = 'citizen', phone?: string, address?: string) {
     try {
       const response = await this.client.post('/api/auth/register', {
         name,
@@ -62,9 +63,11 @@ class ApiClient {
         password,
         password_confirmation,
         role,
+        phone,
+        address,
       });
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       this.handleError(error);
       throw error;
     }
@@ -74,7 +77,17 @@ class ApiClient {
     try {
       const response = await this.client.post('/api/auth/login', { email, password });
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  async loginWithRole(loginData: Record<string, string>) {
+    try {
+      const response = await this.client.post('/api/auth/login', loginData);
+      return response.data;
+    } catch (error: any) {
       this.handleError(error);
       throw error;
     }
@@ -84,7 +97,7 @@ class ApiClient {
     try {
       const response = await this.client.post('/api/auth/logout');
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       this.handleError(error);
       throw error;
     }
@@ -94,7 +107,7 @@ class ApiClient {
     try {
       const response = await this.client.get('/api/auth/me');
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       this.handleError(error);
       throw error;
     }
@@ -109,7 +122,7 @@ class ApiClient {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       this.handleError(error);
       throw error;
     }
@@ -120,7 +133,7 @@ class ApiClient {
     try {
       const response = await this.client.get('/api/my-reports');
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       this.handleError(error);
       throw error;
     }
@@ -131,7 +144,7 @@ class ApiClient {
     try {
       const response = await this.client.get('/api/crime-reports');
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       this.handleError(error);
       throw error;
     }
@@ -142,7 +155,7 @@ class ApiClient {
     try {
       const response = await this.client.get(`/api/crime-report/${id}`);
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       this.handleError(error);
       throw error;
     }
@@ -157,7 +170,19 @@ class ApiClient {
         remarks,
       });
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  /* ── Admin Analytics ─────────────────────────────────── */
+
+  async getAdminAnalytics() {
+    try {
+      const response = await this.client.get('/api/admin/analytics');
+      return response.data;
+    } catch (error: any) {
       this.handleError(error);
       throw error;
     }

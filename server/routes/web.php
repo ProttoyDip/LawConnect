@@ -1,15 +1,19 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\CrimeReportController;
 
 /*
 |--------------------------------------------------------------------------
 | Web Routes – LawConnect
 |--------------------------------------------------------------------------
+|
+| These routes are for backend-related web pages (e.g., email verification,
+| password reset links that might open in email clients). The frontend is
+| now handled by React.
+|
 */
 
+<<<<<<< Updated upstream
 // Landing page
 Route::get('/', function () {
     return view('welcome');
@@ -74,5 +78,13 @@ require __DIR__ . '/auth.php';
 
 // Catch-all for SPA (if React client is used alongside Blade)
 // Route::get('{any}', function () {
+=======
+// SPA fallback route - serves React app for all frontend routes
+// Uncomment if serving React build from Laravel public folder
+// Route::get('/{any}', function () {
+>>>>>>> Stashed changes
 //     return file_get_contents(public_path('index.html'));
 // })->where('any', '.*');
+
+// Note: Auth routes (login, register, password reset) have been moved to API-only
+// The React frontend handles all authentication via /api/auth/* endpoints
