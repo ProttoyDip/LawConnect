@@ -1,10 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { loadSlim } from '@tsparticles/slim';
 import { Particles as ParticlesComponent } from '@tsparticles/react';
-import { useTheme } from '../context/ThemeContext';
 
 export default function ParticlesBackground() {
-  const { theme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [init, setInit] = useState(false);
 
@@ -12,10 +10,6 @@ export default function ParticlesBackground() {
     setMounted(true);
     loadSlim(undefined as never).then(() => setInit(true));
   }, []);
-
-  const particlesInit = async (engine: unknown) => {
-    await loadSlim(engine as never);
-  };
 
   const options = useMemo(() => ({
     background: {
@@ -50,10 +44,10 @@ export default function ParticlesBackground() {
     },
     particles: {
       color: {
-        value: theme === 'dark' ? '#8b5cf6' : '#6366f1',
+        value: '#6366f1',
       },
       links: {
-        color: theme === 'dark' ? '#8b5cf6' : '#6366f1',
+        color: '#6366f1',
         distance: 150,
         enable: true,
         opacity: 0.2,
@@ -87,7 +81,7 @@ export default function ParticlesBackground() {
       },
     },
     detectRetina: true,
-  }), [theme]);
+  }), []);
 
   if (!mounted || !init) return null;
 
@@ -96,7 +90,6 @@ export default function ParticlesBackground() {
       <ParticlesComponent
         id="tsparticles"
         options={options}
-        init={particlesInit}
         className="absolute inset-0"
       />
     </div>
