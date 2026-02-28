@@ -1,0 +1,82 @@
+@import "tailwindcss";
+
+/* Enable dark mode via CSS */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-navy-900: #1e3a8a;
+  --color-navy-800: #1e40af;
+  --color-navy-700: #1d4ed8;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
+  }
+
+  /* Default to light mode */
+  html {
+    color-scheme: light;
+  }
+  
+  html.dark {
+    color-scheme: dark;
+  }
+}
+
+/* Professional Button Styles */
+.btn-primary {
+  @apply bg-navy-800 hover:bg-navy-900 text-white font-medium py-3 px-6 rounded-lg transition-all duration-300 ease-in-out;
+}
+
+.btn-outline {
+  @apply border-2 border-navy-800 text-navy-800 hover:bg-navy-800 hover:text-white font-medium py-3 px-6 rounded-lg transition-all duration-300 ease-in-out;
+}
+
+/* Card Styles */
+.card {
+  @apply bg-white dark:bg-slate-800 rounded-lg shadow-md border border-slate-200 dark:border-slate-700 transition-all duration-300;
+}
+
+.card-hover:hover {
+  @apply shadow-lg -translate-y-1;
+}
+
+/* Input Styles */
+.input-field {
+  @apply w-full py-3 text-base border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-800 focus:border-blue-800 dark:focus:ring-blue-700 dark:focus:border-blue-700 transition-all duration-200;
+}
+
+/* Section spacing */
+.section {
+  @apply py-16;
+}
+
+/* Container */
+.container-main {
+  @apply max-w-6xl mx-auto px-6;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}

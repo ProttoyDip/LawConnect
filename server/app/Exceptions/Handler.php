@@ -1,0 +1,94 @@
+<?php
+
+namespace App\Exceptions;
+
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
+use Throwable;
+
+class Handler extends ExceptionHandler
+{
+    /**
+     * A list of the exception types that are not reported.
+     *
+     * @var array<int, class-string<Throwable>>
+     */
+    protected $dontReport = [
+        //
+    ];
+
+    /**
+     * A list of the inputs that are never flashed for validation exceptions.
+     *
+     * @var array<int, string>
+     */
+    protected $dontFlash = [
+        'current_password',
+        'password',
+        'password_confirmation',
+    ];
+
+    /**
+     * Register the exception handling callbacks for the application.
+     *
+     * @return void
+     */
+    public function register()
+    {
+        $this->reportable(function (Throwable $e) {
+            //
+        });
+    }
+
+    /**
+     * Render an exception into an HTTP response.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @param \Throwable $exception
+     * @return \Illuminate\Http\JsonResponse|\Symfony\Component\HttpFoundation\Response
+     */
+    public function render($request, Throwable $exception)
+    {
+        // Let validation errors return their own 422 with field-level messages
+        if ($exception instanceof ValidationException) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed.',
+                'errors'  => $exception->errors(),
+            ], $exception->status);
+        }
+
+        // Model not found → 404
+        if ($exception instanceof ModelNotFoundException) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Resource not found.',
+            ], 404);
+        }
+
+        // Respect HTTP status codes from HttpExceptions (401, 403, 404, etc.)
+        if ($exception instanceof HttpException) {
+            return response()->json([
+                'success' => false,
+                'message' => $exception->getMessage() ?: 'HTTP error.',
+            ], $exception->getStatusCode());
+        }
+
+        // Everything else — expose the real message for debugging
+        $status = method_exists($exception, 'getStatusCode')
+            ? $exception->getStatusCode()
+            : 500;
+
+        return response()->json([
+            'success'   => false,
+            'message'   => $exception->getMessage() ?: 'An unexpected error occurred.',
+            'exception' => get_class($exception),
+            'file'      => $exception->getFile(),
+            'line'      => $exception->getLine(),
+            // Remove 'trace' in production; keep for debugging:
+            'trace'     => collect($exception->getTrace())->take(5)->toArray(),
+        ], $status);
+    }
+}
