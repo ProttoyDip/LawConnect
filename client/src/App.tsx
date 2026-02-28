@@ -6,7 +6,6 @@ import Login from './views/Login';
 import Register from './views/Register';
 import ForgotPassword from './views/ForgotPassword';
 import Dashboard from './views/Dashboard';
-import AdminDashboard from './views/AdminDashboard';
 import ReportCrime from './views/ReportCrime';
 import ReportList from './views/ReportList';
 import Navbar from './components/Navbar';
@@ -49,8 +48,9 @@ function App() {
 
           {/* Protected routes — require token */}
           <Route element={<ProtectedRoute />}>
+            {/* Unified role-based dashboard */}
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin" element={<Dashboard />} />
             <Route path="/report-crime" element={<ReportCrime />} />
             <Route path="/my-reports" element={<ReportList myReports />} />
             <Route path="/reports" element={<ReportList />} />

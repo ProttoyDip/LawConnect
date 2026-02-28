@@ -13,7 +13,6 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-<<<<<<< Updated upstream
 // Landing page
 Route::get('/', function () {
     return view('welcome');
@@ -76,13 +75,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 // Auth scaffolding (login/register pages)
 require __DIR__ . '/auth.php';
 
-// Catch-all for SPA (if React client is used alongside Blade)
-// Route::get('{any}', function () {
-=======
 // SPA fallback route - serves React app for all frontend routes
 // Uncomment if serving React build from Laravel public folder
 // Route::get('/{any}', function () {
->>>>>>> Stashed changes
 //     return file_get_contents(public_path('index.html'));
 // })->where('any', '.*');
 

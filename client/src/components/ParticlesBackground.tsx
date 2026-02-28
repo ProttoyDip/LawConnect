@@ -6,9 +6,11 @@ import { useTheme } from '../context/ThemeContext';
 export default function ParticlesBackground() {
   const { theme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [init, setInit] = useState(false);
 
   useEffect(() => {
     setMounted(true);
+    loadSlim(undefined as never).then(() => setInit(true));
   }, []);
 
   const particlesInit = async (engine: unknown) => {
@@ -32,7 +34,9 @@ export default function ParticlesBackground() {
           enable: true,
           mode: 'repulse',
         },
-        resize: true,
+        resize: {
+          enable: true,
+        },
       },
       modes: {
         push: {
@@ -56,10 +60,10 @@ export default function ParticlesBackground() {
         width: 1,
       },
       move: {
-        direction: 'none',
+        direction: 'none' as const,
         enable: true,
         outModes: {
-          default: 'bounce',
+          default: 'bounce' as const,
         },
         random: false,
         speed: 1,
@@ -85,7 +89,7 @@ export default function ParticlesBackground() {
     detectRetina: true,
   }), [theme]);
 
-  if (!mounted) return null;
+  if (!mounted || !init) return null;
 
   return (
     <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">

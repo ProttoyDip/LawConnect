@@ -41,22 +41,16 @@ const BaseLayout: React.FC<BaseLayoutProps> = ({ children }) => {
   return (
     <div className="layout">
       <header className="d-flex align-items-center my-1 bg-light navbar-mx">
-<<<<<<< Updated upstream
         <h3 className="d-flex align-items-center gap-2 mb-0">
-          <Link className="text-decoration-none text-dark d-flex align-items-center gap-2" to="/dashboard" style={{ transition: 'transform 0.2s' }} onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.05)')} onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}>
-=======
-        <h3>
           <Link 
-            className="text-decoration-none text-dark" 
-            to="/"
+            className="text-decoration-none text-dark d-flex align-items-center gap-2" 
+            to="/dashboard"
+            style={{ transition: 'transform 0.2s' }} 
+            onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.05)')} 
+            onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
           >
->>>>>>> Stashed changes
-            LawConnect
-          </Link>
-        </h3>
-        <h3 className="d-flex align-items-center gap-2 mb-0 ms-2">
-          <Link className="text-decoration-none text-dark d-flex align-items-center gap-2" to="/dashboard">
             <img src="/logo.jpeg" alt="LawConnect Logo" style={{ height: 36 }} />
+            LawConnect
           </Link>
         </h3>
         <div className="flex-grow-1"></div>

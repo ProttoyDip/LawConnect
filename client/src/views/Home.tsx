@@ -1,24 +1,7 @@
-<<<<<<< Updated upstream
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-
-/**
- * Home simply redirects to /dashboard (if logged in) or /login.
- */
-export default function Home() {
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    navigate(token ? '/dashboard' : '/login', { replace: true });
-  }, [navigate]);
-
-  return null;
-=======
 import { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Shield, Eye, Lock, Users, Clock, CheckCircle, FileText, MapPin, Phone, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowRight, Shield, Eye, Lock, Users, CheckCircle, FileText, MapPin, Phone, ChevronLeft, ChevronRight } from 'lucide-react';
 
 // Professional law enforcement and justice images for slideshow - keeping original first
 const heroImages = [
@@ -80,8 +63,16 @@ const itemVariants = {
 
 export default function Home() {
   const isAuthenticated = !!localStorage.getItem('token');
+  const navigate = useNavigate();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+
+  // Redirect to dashboard if already logged in
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   const goToNextSlide = useCallback(() => {
     setCurrentSlide((prev) => (prev + 1) % heroImages.length);
@@ -425,5 +416,4 @@ export default function Home() {
       </footer>
     </div>
   );
->>>>>>> Stashed changes
 }
