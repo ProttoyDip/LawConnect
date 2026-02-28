@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Mail, Lock, User, Shield, Users, Phone, MapPin } from 'lucide-react';
-import ApiClient from '../api';
+import ApiClient from '../../api';
 import toast from 'react-hot-toast';
 
 const apiClient = new ApiClient();
