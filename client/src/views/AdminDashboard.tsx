@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Card, Col, Row, Spinner, Table } from 'react-bootstrap';
+import { Card } from '../components/ui/Card';
+import { Table } from '../components/ui/Table';
+import { Skeleton } from '../components/ui/Skeleton';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import ApiClient, { CrimeReport, User } from '../api';
@@ -60,7 +62,8 @@ export default function AdminDashboard() {
   if (!user || loading || !analytics) {
     return (
       <div className="text-center py-5">
-        <Spinner animation="border" />
+        <Skeleton className="w-12 h-12 mx-auto rounded-full" />
+        <p className="mt-2 text-gray-500">Loading...</p>
       </div>
     );
   }
@@ -71,132 +74,114 @@ export default function AdminDashboard() {
         <h2 className="mb-4">Admin Dashboard</h2>
 
         {/* Stats Cards */}
-        <Row className="g-4 mb-4">
-          <Col xs={6} md={3}>
-            <motion.div
-              whileInView={{ opacity: 1, scale: 1 }}
-              initial={{ opacity: 0, scale: 0.9 }}
-              transition={{ duration: 0.3 }}
-            >
-              <Card className="h-100 text-center shadow-sm">
-                <Card.Body>
-                  <div className="display-4 fw-bold text-primary">{analytics.total_reports}</div>
-                  <div className="text-muted">Total Reports</div>
-                </Card.Body>
-              </Card>
-            </motion.div>
-          </Col>
-          <Col xs={6} md={3}>
-            <motion.div
-              whileInView={{ opacity: 1, scale: 1 }}
-              initial={{ opacity: 0, scale: 0.9 }}
-              transition={{ duration: 0.3, delay: 0.1 }}
-            >
-              <Card className="h-100 text-center shadow-sm">
-                <Card.Body>
-                  <div className="display-4 fw-bold text-warning">{analytics.pending_reports}</div>
-                  <div className="text-muted">Pending</div>
-                </Card.Body>
-              </Card>
-            </motion.div>
-          </Col>
-          <Col xs={6} md={3}>
-            <motion.div
-              whileInView={{ opacity: 1, scale: 1 }}
-              initial={{ opacity: 0, scale: 0.9 }}
-              transition={{ duration: 0.3, delay: 0.2 }}
-            >
-              <Card className="h-100 text-center shadow-sm">
-                <Card.Body>
-                  <div className="display-4 fw-bold text-info">{analytics.investigating}</div>
-                  <div className="text-muted">Investigating</div>
-                </Card.Body>
-              </Card>
-            </motion.div>
-          </Col>
-          <Col xs={6} md={3}>
-            <motion.div
-              whileInView={{ opacity: 1, scale: 1 }}
-              initial={{ opacity: 0, scale: 0.9 }}
-              transition={{ duration: 0.3, delay: 0.3 }}
-            >
-              <Card className="h-100 text-center shadow-sm">
-                <Card.Body>
-                  <div className="display-4 fw-bold text-success">{analytics.resolved_reports}</div>
-                  <div className="text-muted">Resolved</div>
-                </Card.Body>
-              </Card>
-            </motion.div>
-          </Col>
-        </Row>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+          <motion.div
+            whileInView={{ opacity: 1, scale: 1 }}
+            initial={{ opacity: 0, scale: 0.9 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Card className="h-full text-center shadow-sm">
+              <Card.Content>
+                <div className="text-4xl font-bold text-blue-600">{analytics.total_reports}</div>
+                <div className="text-gray-500">Total Reports</div>
+              </Card.Content>
+            </Card>
+          </motion.div>
+          <motion.div
+            whileInView={{ opacity: 1, scale: 1 }}
+            initial={{ opacity: 0, scale: 0.9 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
+          >
+            <Card className="h-full text-center shadow-sm">
+              <Card.Content>
+                <div className="text-4xl font-bold text-yellow-600">{analytics.pending_reports}</div>
+                <div className="text-gray-500">Pending</div>
+              </Card.Content>
+            </Card>
+          </motion.div>
+          <motion.div
+            whileInView={{ opacity: 1, scale: 1 }}
+            initial={{ opacity: 0, scale: 0.9 }}
+            transition={{ duration: 0.3, delay: 0.2 }}
+          >
+            <Card className="h-full text-center shadow-sm">
+              <Card.Content>
+                <div className="text-4xl font-bold text-blue-600">{analytics.investigating}</div>
+                <div className="text-gray-500">Investigating</div>
+              </Card.Content>
+            </Card>
+          </motion.div>
+          <motion.div
+            whileInView={{ opacity: 1, scale: 1 }}
+            initial={{ opacity: 0, scale: 0.9 }}
+            transition={{ duration: 0.3, delay: 0.3 }}
+          >
+            <Card className="h-full text-center shadow-sm">
+              <Card.Content>
+                <div className="text-4xl font-bold text-green-600">{analytics.resolved_reports}</div>
+                <div className="text-gray-500">Resolved</div>
+              </Card.Content>
+            </Card>
+          </motion.div>
+        </div>
 
         {/* By Category and By Priority */}
-        <Row className="g-4 mb-4">
-          <Col md={6}>
-            <Card className="h-100 shadow-sm">
-              <Card.Header className="bg-light fw-bold">Reports by Category</Card.Header>
-              <Card.Body>
-                <ul className="list-unstyled mb-0">
-                  {Object.entries(analytics.by_category || {}).map(([category, count]) => (
-                    <li key={category} className="d-flex justify-content-between py-2 border-bottom">
-                      <span className="text-capitalize">{category}</span>
-                      <span className="fw-semibold">{count}</span>
-                    </li>
-                  ))}
-                </ul>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col md={6}>
-            <Card className="h-100 shadow-sm">
-              <Card.Header className="bg-light fw-bold">Reports by Priority</Card.Header>
-              <Card.Body>
-                <ul className="list-unstyled mb-0">
-                  {Object.entries(analytics.by_priority || {}).map(([priority, count]) => (
-                    <li key={priority} className="d-flex justify-content-between py-2 border-bottom">
-                      <span className="text-capitalize">{priority}</span>
-                      <span className="fw-semibold">{count}</span>
-                    </li>
-                  ))}
-                </ul>
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <Card className="shadow-sm">
+            <Card.Header className="bg-gray-100 font-bold">Reports by Category</Card.Header>
+            <Card.Content>
+              <ul className="space-y-0">
+                {Object.entries(analytics.by_category || {}).map(([category, count]) => (
+                  <li key={category} className="flex justify-between py-2 border-b">
+                    <span className="capitalize">{category}</span>
+                    <span className="font-semibold">{count}</span>
+                  </li>
+                ))}
+              </ul>
+            </Card.Content>
+          </Card>
+          <Card className="shadow-sm">
+            <Card.Header className="bg-gray-100 font-bold">Reports by Priority</Card.Header>
+            <Card.Content>
+              <ul className="space-y-0">
+                {Object.entries(analytics.by_priority || {}).map(([priority, count]) => (
+                  <li key={priority} className="flex justify-between py-2 border-b">
+                    <span className="capitalize">{priority}</span>
+                    <span className="font-semibold">{count}</span>
+                  </li>
+                ))}
+              </ul>
+            </Card.Content>
+          </Card>
+        </div>
 
         {/* Quick Stats */}
-        <Row className="g-4 mb-4">
-          <Col xs={4}>
-            <Card className="text-center shadow-sm">
-              <Card.Body>
-                <div className="h2 fw-bold">{analytics.total_users}</div>
-                <div className="text-muted">Total Users</div>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col xs={4}>
-            <Card className="text-center shadow-sm">
-              <Card.Body>
-                <div className="h2 fw-bold">{analytics.total_officers}</div>
-                <div className="text-muted">Police Officers</div>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col xs={4}>
-            <Card className="text-center shadow-sm">
-              <Card.Body>
-                <div className="h2 fw-bold text-secondary">{analytics.closed_reports}</div>
-                <div className="text-muted">Closed</div>
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
+        <div className="grid grid-cols-3 gap-4 mb-4">
+          <Card className="text-center shadow-sm">
+            <Card.Content>
+              <div className="text-2xl font-bold">{analytics.total_users}</div>
+              <div className="text-gray-500">Total Users</div>
+            </Card.Content>
+          </Card>
+          <Card className="text-center shadow-sm">
+            <Card.Content>
+              <div className="text-2xl font-bold">{analytics.total_officers}</div>
+              <div className="text-gray-500">Police Officers</div>
+            </Card.Content>
+          </Card>
+          <Card className="text-center shadow-sm">
+            <Card.Content>
+              <div className="text-2xl font-bold text-gray-600">{analytics.closed_reports}</div>
+              <div className="text-gray-500">Closed</div>
+            </Card.Content>
+          </Card>
+        </div>
 
         {/* Recent Reports */}
         <Card className="shadow-sm">
           <Card.Header className="bg-light fw-bold">Recent Reports</Card.Header>
-          <Card.Body className="p-0">
-            <Table responsive hover className="mb-0">
+          <Card.Content className="p-0">
+            <Table responsive className="mb-0 table-hover">
               <thead>
                 <tr>
                   <th>Case ID</th>
@@ -229,7 +214,7 @@ export default function AdminDashboard() {
                 ))}
               </tbody>
             </Table>
-          </Card.Body>
+          </Card.Content>
         </Card>
       </div>
     </PageTransition>
