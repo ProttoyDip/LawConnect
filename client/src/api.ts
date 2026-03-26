@@ -8,6 +8,8 @@ export interface User {
   id: number;
   name: string;
   email: string;
+  phone?: string;
+  address?: string;
   role: 'citizen' | 'police' | 'admin';
 }
 
@@ -106,6 +108,16 @@ class ApiClient {
   async me() {
     try {
       const response = await this.client.get('/api/auth/me');
+      return response.data;
+    } catch (error: any) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  async updateProfile(data: Partial<User>) {
+    try {
+      const response = await this.client.put('/api/auth/me', data);
       return response.data;
     } catch (error: any) {
       this.handleError(error);

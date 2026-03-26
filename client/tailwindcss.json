@@ -1,0 +1,37 @@
+{
+  "version": 1.1,
+  "atDirectives": [
+    {
+      "at": "@import",
+      "description": "Import CSS files"
+    },
+    {
+      "at": "@custom-variant",
+      "description": "Define custom variants for Tailwind CSS"
+    },
+    {
+      "at": "@theme",
+      "description": "Define custom theme values for Tailwind CSS v4"
+    },
+    {
+      "at": "@layer",
+      "description": "Organize styles into layers (base, components, utilities)"
+    },
+    {
+      "at": "@apply",
+      "description": "Apply utility classes within CSS"
+    },
+    {
+      "at": "@tailwind",
+      "description": "Tailwind CSS directives"
+    },
+    {
+      "at": "@responsive",
+      "description": "Generate responsive variants"
+    },
+    {
+      "at": "@variants",
+      "description": "Generate state variants"
+    }
+  ]
+}

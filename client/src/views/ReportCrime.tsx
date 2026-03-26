@@ -1,5 +1,8 @@
 import { useState } from 'react';
-import { Button, Card, Form, Spinner, Row, Col } from 'react-bootstrap';
+import { Button } from '../components/ui/Button';
+import { Card } from '../components/ui/Card';
+import { FormLabel, FormInput, FormSelect, FormTextarea, FormGroup } from '../components/ui/Form';
+import { Skeleton } from '../components/ui/Skeleton';
 import { useNavigate } from 'react-router-dom';
 import ApiClient from '../api';
 import toast from 'react-hot-toast';
@@ -55,114 +58,159 @@ export default function ReportCrime() {
 
   return (
     <PageTransition>
-    <div className="d-flex justify-content-center py-4">
-      <Card style={{ width: '100%', maxWidth: 700 }} className="shadow">
-        <Card.Body className="p-4">
-          <h3 className="mb-4">Submit a Crime Report</h3>
-          <Form onSubmit={handleSubmit}>
-            <Form.Group className="mb-3" controlId="crimeTitle">
-              <Form.Label>Title / Subject *</Form.Label>
-              <Form.Control
-                type="text"
-                placeholder="Brief summary of the incident"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                required
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3" controlId="crimeCategory">
-              <Form.Label>Category *</Form.Label>
-              <Form.Select 
-                value={category} 
-                onChange={(e) => setCategory(e.target.value)}
-                required
-              >
-                <option value="">-- Select --</option>
-                <option value="theft">Theft</option>
-                <option value="assault">Assault</option>
-                <option value="fraud">Fraud</option>
-                <option value="vandalism">Vandalism</option>
-                <option value="cyber">Cyber Crime</option>
-                <option value="other">Other</option>
-              </Form.Select>
-            </Form.Group>
-
-            <Form.Group className="mb-3" controlId="crimeDescription">
-              <Form.Label>Description *</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={5}
-                placeholder="Describe the incident in detail…"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                required
-              />
-            </Form.Group>
-
-            <Row className="mb-3">
-              <Col md={6}>
-                <Form.Group controlId="crimeLocation">
-                  <Form.Label>Location *</Form.Label>
-                  <Form.Control
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-2xl mx-auto">
+          <Card className="shadow-2xl border-0 p-8 space-y-8">
+            <div>
+              <div className="text-center">
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-900 to-indigo-900 bg-clip-text text-transparent mb-4">
+                  Submit Crime Report
+                </h1>
+                <p className="text-xl text-muted-foreground">
+                  Help us protect our community
+                </p>
+              </div>
+              
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Title */}
+                <FormGroup>
+                  <FormLabel className="text-lg font-semibold">
+                    Incident Title <span className="text-destructive">*</span>
+                  </FormLabel>
+                  <FormInput
                     type="text"
-                    placeholder="Where did it happen?"
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
+                    placeholder="e.g., Car stolen from driveway at 123 Main St"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
                     required
+                    className="text-lg py-6"
                   />
-                </Form.Group>
-              </Col>
-              <Col md={6}>
-                <Form.Group controlId="crimeOccurredAt">
-                  <Form.Label>Date / Time of Incident</Form.Label>
-                  <Form.Control
-                    type="datetime-local"
-                    value={occurredAt}
-                    onChange={(e) => setOccurredAt(e.target.value)}
+                </FormGroup>
+
+                {/* Category & Priority */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <FormGroup>
+                    <FormLabel>
+                      Category <span className="text-destructive">*</span>
+                    </FormLabel>
+                    <FormSelect 
+                      value={category} 
+                      onChange={(e) => setCategory(e.target.value)}
+                      required
+                    >
+                      <option value="">Select category</option>
+                      <option value="theft">🛡️ Theft / Robbery</option>
+                      <option value="assault">👊 Assault / Violence</option>
+                      <option value="fraud">💳 Fraud / Scams</option>
+                      <option value="vandalism">🔨 Vandalism / Damage</option>
+                      <option value="cyber">💻 Cyber Crime</option>
+                      <option value="drug">💊 Drug Related</option>
+                      <option value="other">📋 Other</option>
+                    </FormSelect>
+                  </FormGroup>
+
+                  <FormGroup>
+                    <FormLabel>Priority Level</FormLabel>
+                    <FormSelect value={priority} onChange={(e) => setPriority(e.target.value)}>
+                      <option value="low">🟢 Low Priority</option>
+                      <option value="medium">🟡 Medium Priority</option>
+                      <option value="high">🟠 High Priority</option>
+                      <option value="critical">🔴 Critical / Emergency</option>
+                    </FormSelect>
+                  </FormGroup>
+                </div>
+
+                {/* Description */}
+                <FormGroup>
+                  <FormLabel className="text-lg font-semibold">
+                    Detailed Description <span className="text-destructive">*</span>
+                  </FormLabel>
+                  <FormTextarea
+                    placeholder="Please provide as much detail as possible:&#10;&#10;• What exactly happened?&#10;• When did it occur?&#10;• Where exactly?&#10;• Who was involved (description)?&#10;• Any witnesses or suspects?&#10;• Vehicle descriptions?&#10;• Any other relevant information?"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    rows={8}
+                    required
+                    className="text-lg min-h-[200px]"
                   />
-                </Form.Group>
-              </Col>
-            </Row>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    The more details you provide, the faster we can help
+                  </p>
+                </FormGroup>
 
-            <Form.Group className="mb-3" controlId="crimePriority">
-              <Form.Label>Priority</Form.Label>
-              <Form.Select value={priority} onChange={(e) => setPriority(e.target.value)}>
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-                <option value="critical">Critical</option>
-              </Form.Select>
-            </Form.Group>
+                {/* Location & Date */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <FormGroup>
+                    <FormLabel>
+                      Location <span className="text-destructive">*</span>
+                    </FormLabel>
+                    <FormInput
+                      type="text"
+                      placeholder="Full address, intersection, landmark, GPS coordinates"
+                      value={location}
+                      onChange={(e) => setLocation(e.target.value)}
+                      required
+                    />
+                  </FormGroup>
+                  <FormGroup>
+                    <FormLabel>Date & Time</FormLabel>
+                    <FormInput
+                      type="datetime-local"
+                      value={occurredAt}
+                      onChange={(e) => setOccurredAt(e.target.value)}
+                    />
+                  </FormGroup>
+                </div>
 
-            <Form.Group className="mb-3" controlId="crimeEvidence">
-              <Form.Label>Evidence (images / documents, max 5 files)</Form.Label>
-              <Form.Control
-                type="file"
-                multiple
-                accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.mp4,.avi"
-                onChange={(e) => {
-                  const target = e.target as HTMLInputElement;
-                  setFiles(target.files);
-                }}
-              />
-              <Form.Text className="text-muted">
-                Max 10 MB per file. Accepted: images, PDF, Word docs, videos.
-              </Form.Text>
-            </Form.Group>
+                {/* Evidence Upload */}
+                <FormGroup>
+                  <FormLabel className="font-semibold">Evidence / Photos (Optional)</FormLabel>
+                  <FormInput
+                    type="file"
+                    multiple
+                    accept="image/*,.pdf,.doc,.docx"
+                    onChange={(e) => {
+                      const target = e.target as HTMLInputElement;
+                      if (target.files) setFiles(target.files);
+                    }}
+                  />
+                  <p className="text-sm text-muted-foreground mt-2">
+                    📸 Photos, screenshots, documents (max 10MB per file, up to 5 files)
+                  </p>
+                </FormGroup>
 
-            <div className="d-flex gap-2 mt-4">
-              <Button variant="danger" type="submit" disabled={loading}>
-                {loading ? <Spinner animation="border" size="sm" /> : 'Submit Report'}
-              </Button>
-              <Button variant="outline-secondary" onClick={() => navigate('/dashboard')}>
-                Cancel
-              </Button>
+                {/* Submit Buttons */}
+                <div className="flex flex-col sm:flex-row gap-4 pt-8">
+                  <Button 
+                    type="submit" 
+                    disabled={loading}
+                    className="flex-1 h-14 text-lg font-semibold bg-gradient-to-r from-destructive to-red-700 hover:from-destructive/90 hover:to-red-700/90 shadow-lg"
+                  >
+                    {loading ? (
+                      <>
+                        <Skeleton className="h-5 w-5 mr-3 rounded-full" />
+                        Processing Report...
+                      </>
+                    ) : (
+                      '🚨 Submit Report'
+                    )}
+                  </Button>
+                  <Button 
+                    type="button"
+                    variant="outline" 
+                    onClick={() => navigate('/dashboard')}
+                    disabled={loading}
+                    className="flex-1 h-14 text-lg border-2"
+                  >
+                    ← Back to Dashboard
+                  </Button>
+                </div>
+              </form>
             </div>
-          </Form>
-        </Card.Body>
-      </Card>
-    </div>
+          </Card>
+        </div>
+      </div>
     </PageTransition>
   );
 }
+
