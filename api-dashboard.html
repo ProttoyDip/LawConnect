@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LawConnect API Dashboard</title>
+  <style>
+    :root {
+      --bg-primary: #0b1b2b;
+      --bg-secondary: #1e2a44;
+      --text-primary: #ffffff;
+      --text-secondary: #a0a0a0;
+      --border-radius: 12px;
+      --shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      --shadow-hover: 0 8px 30px rgba(59, 130, 246, 0.2);
+      --transition: all 0.2s ease;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      padding: 2rem;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+
+    .header h1 {
+      font-size: 3rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      background: linear-gradient(135deg, #ffffff, #a0a0a0);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .header .subtitle {
+      font-size: 1.2rem;
+      color: var(--text-secondary);
+      margin-bottom: 1rem;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: #10b981;
+      color: white;
+      padding: 0.5rem 1.5rem;
+      border-radius: 50px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+    }
+
+    .status-badge::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      background: #10b981;
+      border-radius: 50%;
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.6);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.1); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    .api-groups {
+      display: grid;
+      gap: 2rem;
+    }
+
+    .group {
+      background: var(--bg-secondary);
+      border-radius: var(--border-radius);
+      padding: 2rem;
+      box-shadow: var(--shadow);
+      transition: var(--transition);
+    }
+
+    .group:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-hover);
+    }
+
+    .group h2 {
+      font-size: 1.8rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .endpoints {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .endpoint {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 1.5rem;
+      align-items: center;
+      padding: 1.25rem;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: var(--border-radius);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: var(--transition);
+      cursor: pointer;
+    }
+
+    .endpoint:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: scale(1.02);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+    }
+
+    .method-badge {
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      font-family: 'Courier New', monospace;
+      font-weight: 700;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      min-width: 60px;
+      text-align: center;
+    }
+
+    .method-get { background: #10b981; color: white; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4); }
+    .method-post { background: #f59e0b; color: white; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4); }
+    .method-put { background: #3b82f6; color: white; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4); }
+    .method-delete { background: #ef4444; color: white; box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4); }
+
+    .endpoint-url {
+      font-family: 'Courier New', 'SF Mono', monospace;
+      font-size: 1rem;
+      color: var(--text-primary);
+      background: rgba(0, 0, 0, 0.3);
+      padding: 0.75rem 1rem;
+      border-radius: 6px;
+      border-left: 4px solid #3b82f6;
+    }
+
+    .endpoint-desc {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      text-align: right;
+    }
+
+    @media (max-width: 768px) {
+      body { padding: 1rem; }
+      
+      .header h1 { font-size: 2rem; }
+      
+      .endpoint {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+        text-align: center;
+      }
+      
+      .endpoint-url { border-left-width: 3px; }
+      .endpoint-desc { text-align: left; }
+    }
+
+    @media (max-width: 480px) {
+      .group { padding: 1.5rem; }
+      .endpoints { gap: 0.75rem; }
+      .endpoint { padding: 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h1>LawConnect API</h1>
+      <div class="subtitle">v1.0.0 - Law Enforcement Management System</div>
+      <div class="status-badge">Server Running</div>
+    </header>
+
+    <div class="api-groups">
+      <!-- Users Group -->
+      <section class="group">
+        <h2>👥 Users & Auth</h2>
+        <div class="endpoints">
+          <div class="endpoint">
+            <span class="method-badge method-post">POST</span>
+            <div class="endpoint-url">/api/auth/register</div>
+            <div class="endpoint-desc">Register new citizen/police user</div>
+          </div>
+          <div class="endpoint">
+            <span class="method-badge method-post">POST</span>
+            <div class="endpoint-url">/api/auth/login</div>
+            <div class="endpoint-desc">Authenticate user and get token</div>
+          </div>
+          <div class="endpoint">
+            <span class="method-badge method-get">GET</span>
+            <div class="endpoint-url">/api/users</div>
+            <div class="endpoint-desc">List all users (admin only)</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Crime Reports Group -->
+      <section class="group">
+        <h2>📋 Crime Reports</h2>
+        <div class="endpoints">
+          <div class="endpoint">
+            <span class="method-badge method-post">POST</span>
+            <div class="endpoint-url">/api/crime-report</div>
+            <div class="endpoint-desc">Citizen creates a new crime report</div>
+          </div>
+          <div class="endpoint">
+            <span class="method-badge method-get">GET</span>
+            <div class="endpoint-url">/api/crime-reports</div>
+            <div class="endpoint-desc">List all reports (police/admin)</div>
+          </div>
+          <div class="endpoint">
+            <span class="method-badge method-get">GET</span>
+            <div class="endpoint-url">/api/crime-report/{id}</div>
+            <div class="endpoint-desc">View single report details</div>
+          </div>
+          <div class="endpoint">
+            <span class="method-badge method-put">PUT</span>
+            <div class="endpoint-url">/api/crime-report/{id}</div>
+            <div class="endpoint-desc">Update pending report (citizen)</div>
+          </div>
+          <div class="endpoint">
+            <span class="method-badge method-delete">DELETE</span>
+            <div class="endpoint-url">/api/crime-report/{id}</div>
+            <div class="endpoint-desc">Admin deletes report</div>
+          </div>
+          <div class="endpoint">
+            <span class="method-badge method-get">GET</span>
+            <div class="endpoint-url">/api/my-reports</div>
+            <div class="endpoint-desc">Citizen's own reports only</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Evidence Group -->
+      <section class="group">
+        <h2>📎 Evidence</h2>
+        <div class="endpoints">
+          <div class="endpoint">
+            <span class="method-badge method-post">POST</span>
+            <div class="endpoint-url">/api/crime-report/{id}/evidence</div>
+            <div class="endpoint-desc">Upload evidence files to report</div>
+          </div>
+          <div class="endpoint">
+            <span class="method-badge method-delete">DELETE</span>
+            <div class="endpoint-url">/api/evidence/{id}</div>
+            <div class="endpoint-desc">Admin removes evidence file</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Assignments Group -->
+      <section class="group">
+        <h2>👮 Assignments</h2>
+        <div class="endpoints">
+          <div class="endpoint">
+            <span class="method-badge method-post">POST</span>
+            <div class="endpoint-url">/api/assignments</div>
+            <div class="endpoint-desc">Assign police to crime report</div>
+          </div>
+          <div class="endpoint">
+            <span class="method-badge method-put">PUT</span>
+            <div class="endpoint-url">/api/status/{id}</div>
+            <div class="endpoint-desc">Update case status</div>
+          </div>
+          <div class="endpoint">
+            <span class="method-badge method-get">GET</span>
+            <div class="endpoint-url">/api/analytics</div>
+            <div class="endpoint-desc">Dashboard analytics & stats</div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</body>
+</html>
