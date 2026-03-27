@@ -18,17 +18,37 @@ export interface AuthResponse {
   token: string;
 }
 
+export interface EvidenceFile {
+  id: number;
+  file_name: string;
+  file_size: number;
+  file_path?: string;
+  mime_type?: string;
+}
+
+export interface StatusUpdate {
+  id: number;
+  status: string;
+  notes?: string;
+  remarks?: string;
+  created_at: string;
+}
+
 export interface CrimeReport {
   id: number;
   title: string;
   description: string;
+  category?: string;
   location: string;
   priority: string;
   status: string;
+  occurred_at?: string;
   user_id: number;
   created_at: string;
   updated_at: string;
   user?: User;
+  evidence?: EvidenceFile[];
+  status_updates?: StatusUpdate[];
 }
 
 /* ──────────────────────────── Client ─────────────────────────── */
