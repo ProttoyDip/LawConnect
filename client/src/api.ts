@@ -57,11 +57,12 @@ class ApiClient {
 
   /* ── Auth ───────────────────────────────────────────────── */
 
-  async register(name: string, email: string, password: string, password_confirmation: string, role: string = 'citizen', phone?: string, address?: string) {
+  async register(name: string, email: string, password: string, password_confirmation: string, nationalId?: string, role: string = 'citizen', phone?: string, address?: string) {
     try {
       const response = await this.client.post('/api/auth/register', {
         name,
         email,
+        ...(nationalId && { national_id: nationalId }),
         password,
         password_confirmation,
         role,
@@ -207,8 +208,10 @@ class ApiClient {
       const msg =
         error.response.data?.message ||
         error.response.data?.error ||
+        (error.response.data?.errors ? Object.values(error.response.data.errors).flat().join(', ') : null) ||
         `Error ${error.response.status}`;
       console.error(`API Error: ${error.response.status} – ${msg}`);
+      console.error('Full response:', error.response.data);
       toast.error(msg);
     } else if (error.request) {
       console.error('API Error: No response received', error.request);

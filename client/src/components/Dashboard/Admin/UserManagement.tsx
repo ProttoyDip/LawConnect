@@ -1,5 +1,9 @@
 import { useState } from 'react';
-import { Button, Table, Modal, Form, Badge } from 'react-bootstrap';
+import React, { ChangeEvent } from 'react';
+import { Button } from '../../ui/Button';
+import { Badge } from '../../ui/Badge';
+import { Modal } from '../../ui/Modal';
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '../../ui/Table';
 import { motion, AnimatePresence } from 'framer-motion';
 import GlassCard from '../common/GlassCard';
 import { User } from '../../../api';

@@ -1,4 +1,6 @@
-import { ReactNode } from 'react'
+import { ReactNode, HTMLAttributes } from 'react'
+import { motion } from 'framer-motion'
+
 
 interface TableProps {
   children: ReactNode
@@ -31,14 +33,23 @@ export function TableBody({ className = '', ...props }: React.HTMLAttributes<HTM
   )
 }
 
-export function TableRow({ className = '', ...props }: React.HTMLAttributes<HTMLTableRowElement>) {
+
+export function TableRow({ className = '', initial, animate, transition, ...props }: React.HTMLAttributes<HTMLTableRowElement> & {
+  initial?: { opacity: number; x: number };
+  animate?: { opacity: number; x: number };
+  transition?: { delay: number };
+}) {
   return (
-    <tr
+    <motion.tr
+      initial={initial}
+      animate={animate}
+      transition={transition}
       className={`border-b border-gray-200 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors ${className}`}
       {...props}
     />
   )
 }
+
 
 export function TableHead({ className = '', ...props }: React.HTMLAttributes<HTMLTableCellElement>) {
   return (

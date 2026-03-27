@@ -3,6 +3,7 @@ export interface User {
   id: number;
   name: string;
   email: string;
+  national_id?: string;
   role: 'citizen' | 'police' | 'admin';
   phone?: string;
   address?: string;
@@ -93,6 +94,7 @@ export interface LoginFormData {
 export interface RegisterFormData {
   name: string;
   email: string;
+  national_id?: string;
   password: string;
   confirmPassword: string;
   role: 'citizen' | 'police' | 'admin';
