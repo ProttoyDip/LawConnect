@@ -17,6 +17,7 @@ export default function Register() {
   const navigate = useNavigate();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [nationalId, setNationalId] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [password, setPassword] = useState('');
@@ -28,7 +29,7 @@ export default function Register() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!name || !email || !password || !confirmPassword) {
+    if (!name || !email || !password || !confirmPassword || (role === 'citizen' && !nationalId.trim())) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -43,7 +44,7 @@ export default function Register() {
 
     setLoading(true);
     try {
-      const data = await apiClient.register(name, email, password, confirmPassword, role, phone, address);
+      const data = await apiClient.register(name, email, password, confirmPassword, nationalId, role, phone, address);
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
       toast.success('Registration successful');
@@ -146,6 +147,27 @@ export default function Register() {
                 />
               </div>
             </div>
+
+            {/* National ID */}
+            {role === 'citizen' && (
+              <div>
+                <label htmlFor="nationalId" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  National ID *
+                </label>
+                <div className="relative">
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
+                  <input
+                    id="nationalId"
+                    type="text"
+                    value={nationalId}
+                    onChange={(e) => setNationalId(e.target.value)}
+                    className="input-field pl-12 pr-4"
+                    placeholder="Enter your National ID"
+                    maxLength={20}
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Phone */}
             <div>

@@ -1,4 +1,4 @@
-import { Row, Col } from 'react-bootstrap';
+// No Row/Col import needed - using Tailwind grid
 import StatsCard from '../common/StatsCard';
 
 interface OverviewCardsProps {
@@ -41,43 +41,35 @@ const ReportsIcon = () => (
 
 export default function OverviewCards({ analytics }: OverviewCardsProps) {
   return (
-    <Row className="g-4">
-      <Col xs={6} md={3}>
-        <StatsCard
-          title="Total Users"
-          value={analytics.total_users}
-          icon={<UsersIcon />}
-          color="primary"
-          delay={0}
-        />
-      </Col>
-      <Col xs={6} md={3}>
-        <StatsCard
-          title="Total Cases"
-          value={analytics.total_reports}
-          icon={<CasesIcon />}
-          color="info"
-          delay={1}
-        />
-      </Col>
-      <Col xs={6} md={3}>
-        <StatsCard
-          title="Active Investigations"
-          value={analytics.investigating}
-          icon={<InvestigationIcon />}
-          color="warning"
-          delay={2}
-        />
-      </Col>
-      <Col xs={6} md={3}>
-        <StatsCard
-          title="Reports Filed"
-          value={analytics.closed_reports}
-          icon={<ReportsIcon />}
-          color="success"
-          delay={3}
-        />
-      </Col>
-    </Row>
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <StatsCard
+        title="Total Users"
+        value={analytics.total_users}
+        icon={<UsersIcon />}
+        color="primary"
+        delay={0}
+      />
+      <StatsCard
+        title="Total Cases"
+        value={analytics.total_reports}
+        icon={<CasesIcon />}
+        color="info"
+        delay={1}
+      />
+      <StatsCard
+        title="Active Investigations"
+        value={analytics.investigating}
+        icon={<InvestigationIcon />}
+        color="warning"
+        delay={2}
+      />
+      <StatsCard
+        title="Reports Filed"
+        value={analytics.closed_reports}
+        icon={<ReportsIcon />}
+        color="success"
+        delay={3}
+      />
+    </div>
   );
 }

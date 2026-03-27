@@ -1,5 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Badge, Button, Form, Modal, Spinner, Table } from 'react-bootstrap';
+import { Skeleton } from '../components/ui/Skeleton';
+import { Button } from '../components/ui/Button';
+import { Badge } from '../components/ui/Badge';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/Table';
+import { Modal } from '../components/ui/Modal';
+import { FormLabel, FormInput, FormSelect, FormTextarea } from '../components/ui/Form'; // Create if needed, or use HTML
 import ApiClient, { CrimeReport, User } from '../api';
 import toast from 'react-hot-toast';
 import PageTransition from '../components/PageTransition';
@@ -7,7 +12,7 @@ import PageTransition from '../components/PageTransition';
 const apiClient = new ApiClient();
 
 function statusBadge(status: string) {
-  const variants: Record<string, string> = {
+  const variants: Record<string, 'warning' | 'info' | 'success' | 'secondary' | 'danger'> = {
     pending: 'warning',
     investigating: 'info',
     resolved: 'success',
@@ -15,7 +20,7 @@ function statusBadge(status: string) {
     rejected: 'danger',
   };
   return (
-    <Badge bg={variants[status?.toLowerCase()] || 'secondary'} className="text-capitalize">
+    <Badge variant={variants[status?.toLowerCase()] || 'secondary'} className="capitalize">
       {status}
     </Badge>
   );
@@ -86,7 +91,8 @@ export default function ReportList({ myReports = false }: Props) {
   if (loading) {
     return (
       <div className="text-center py-5">
-        <Spinner animation="border" />
+        <Skeleton className="w-12 h-12 mx-auto rounded-full" />
+        <p className="mt-2 text-gray-500">Loading...</p>
       </div>
     );
   }
@@ -99,74 +105,69 @@ export default function ReportList({ myReports = false }: Props) {
       {reports.length === 0 ? (
         <p className="text-muted">No reports found.</p>
       ) : (
-        <Table striped bordered hover responsive>
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Title</th>
-              <th>Location</th>
-              <th>Priority</th>
-              <th>Status</th>
-              <th>Date</th>
-              {canUpdateStatus && <th>Action</th>}
-            </tr>
-          </thead>
-          <tbody>
+        <Table responsive striped hover>
+          <TableHeader>
+            <TableRow>
+              <TableHead>ID</TableHead>
+              <TableHead>Title</TableHead>
+              <TableHead>Location</TableHead>
+              <TableHead>Priority</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Date</TableHead>
+              {canUpdateStatus && <TableHead>Action</TableHead>}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {reports.map((r) => (
-              <tr key={r.id}>
-                <td>{r.id}</td>
-                <td>{r.title}</td>
-                <td>{r.location}</td>
-                <td className="text-capitalize">{r.priority}</td>
-                <td>{statusBadge(r.status)}</td>
-                <td>{new Date(r.created_at).toLocaleDateString()}</td>
+              <TableRow key={r.id}>
+                <TableCell>{r.id}</TableCell>
+                <TableCell>{r.title}</TableCell>
+                <TableCell>{r.location}</TableCell>
+                <TableCell className="text-capitalize">{r.priority}</TableCell>
+                <TableCell>{statusBadge(r.status)}</TableCell>
+                <TableCell>{new Date(r.created_at).toLocaleDateString()}</TableCell>
                 {canUpdateStatus && (
-                  <td>
+                  <TableCell>
                     <Button size="sm" variant="outline-primary" onClick={() => openStatusModal(r)}>
                       Update
                     </Button>
-                  </td>
+                  </TableCell>
                 )}
-              </tr>
+              </TableRow>
             ))}
-          </tbody>
+          </TableBody>
         </Table>
       )}
 
       {/* Status Update Modal */}
-      <Modal show={showModal} onHide={() => setShowModal(false)} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>Update Status — #{selectedReport?.id}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form.Group className="mb-3">
-            <Form.Label>Status</Form.Label>
-            <Form.Select value={newStatus} onChange={(e) => setNewStatus(e.target.value)}>
-              <option value="pending">Pending</option>
-              <option value="investigating">Investigating</option>
-              <option value="resolved">Resolved</option>
-              <option value="closed">Closed</option>
-              <option value="rejected">Rejected</option>
-            </Form.Select>
-          </Form.Group>
-          <Form.Group>
-            <Form.Label>Remarks (optional)</Form.Label>
-            <Form.Control
-              as="textarea"
-              rows={2}
-              value={remarks}
-              onChange={(e) => setRemarks(e.target.value)}
-            />
-          </Form.Group>
-        </Modal.Body>
-        <Modal.Footer>
+      <Modal show={showModal} onHide={() => setShowModal(false)} title={`Update Status — #${selectedReport?.id}`}>
+        <FormGroup>
+          <FormLabel>Status</FormLabel>
+          <FormSelect value={newStatus} onChange={(e) => setNewStatus(e.target.value)}>
+            <option value="pending">Pending</option>
+            <option value="investigating">Investigating</option>
+            <option value="resolved">Resolved</option>
+            <option value="closed">Closed</option>
+            <option value="rejected">Rejected</option>
+          </FormSelect>
+        </FormGroup>
+        <FormGroup>
+          <FormLabel>Remarks (optional)</FormLabel>
+          <FormTextarea 
+            rows={2}
+            value={remarks}
+            onChange={(e) => setRemarks(e.target.value)}
+            placeholder="Add remarks..."
+          />
+        </FormGroup>
+        <div className="flex justify-end space-x-2 pt-4">
           <Button variant="secondary" onClick={() => setShowModal(false)}>
             Cancel
           </Button>
-          <Button variant="primary" onClick={handleStatusUpdate} disabled={updating}>
-            {updating ? <Spinner animation="border" size="sm" /> : 'Save'}
+          <Button variant="primary" onClick={handleStatusUpdate} loading={updating} disabled={updating}>
+            Save
           </Button>
-        </Modal.Footer>
+        </div>
       </Modal>
     </div>
     </PageTransition>

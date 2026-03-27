@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Row, Col, Spinner, Tab, Tabs } from 'react-bootstrap';
+import { Skeleton } from '../components/ui/Skeleton';
+import { Tabs } from '../components/ui/Tabs';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -74,7 +75,7 @@ export default function Dashboard() {
   const [showCaseModal, setShowCaseModal] = useState(false);
   
   const [activities, setActivities] = useState<ActivityItem[]>([]);
-  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [notifications] = useState<NotificationItem[]>([]);
 
   useEffect(() => {
     const stored = localStorage.getItem('user');
@@ -164,7 +165,8 @@ export default function Dashboard() {
   if (!user || loading) {
     return (
       <div className="text-center py-5">
-        <Spinner animation="border" />
+        <Skeleton className="w-12 h-12 mx-auto rounded-full" />
+        <p className="mt-2 text-gray-500">Loading...</p>
       </div>
     );
   }
@@ -245,8 +247,8 @@ export default function Dashboard() {
               />
             </div>
 
-            <Row className="g-4">
-              <Col lg={8}>
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+              <div className="lg:col-span-3">
                 <div className="dashboard-section">
                   <h3 className="section-title">Assigned Cases</h3>
                   <AssignedCases
@@ -257,14 +259,14 @@ export default function Dashboard() {
                     }}
                   />
                 </div>
-              </Col>
-              <Col lg={4}>
+              </div>
+              <div>
                 <div className="dashboard-section">
                   <h3 className="section-title">Activity</h3>
                   <ActivityTimeline activities={activities} />
                 </div>
-              </Col>
-            </Row>
+              </div>
+            </div>
           </motion.div>
 
           <CaseUpdateModal
@@ -290,54 +292,28 @@ export default function Dashboard() {
           transition={{ delay: 0.2 }}
           className="dashboard-content"
         >
-          <Tabs defaultActiveKey="reports" className="dashboard-tabs mb-4">
-            <Tab eventKey="reports" title="My Reports">
-              <Row className="g-4">
-                <Col lg={6}>
+          <Tabs items={[
+              { key: 'reports', label: 'My Reports', content: (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <MyReports
                     reports={myReports}
                     onViewDetails={(report: CrimeReport) => {
                       toast.success(`Viewing report: ${report.title}`);
                     }}
                   />
-                </Col>
-                <Col lg={6}>
                   <SubmitReport onSubmit={handleReportSubmit} />
-                </Col>
-              </Row>
-            </Tab>
-            
-            <Tab eventKey="submit" title="Submit Report">
-              <Row className="justify-content-center">
-                <Col lg={8}>
-                  <SubmitReport onSubmit={handleReportSubmit} />
-                </Col>
-              </Row>
-            </Tab>
-            
-            <Tab eventKey="settings" title="Profile Settings">
-              <Row className="justify-content-center">
-                <Col lg={8}>
-                  <ProfileSettings user={user} />
-                </Col>
-              </Row>
-            </Tab>
-            
-            <Tab eventKey="notifications" title="Notifications">
-              <Row className="justify-content-center">
-                <Col lg={8}>
-                  <Notifications
-                    notifications={notifications}
-                    onMarkAsRead={(id: number) => {
-                      setNotifications((prev: NotificationItem[]) => 
-                        prev.map((n: NotificationItem) => n.id === id ? { ...n, read: true } : n)
-                      );
-                    }}
-                  />
-                </Col>
-              </Row>
-            </Tab>
-          </Tabs>
+                </div>
+              ) },
+              { key: 'submit', label: 'Submit Report', content: (
+                <SubmitReport onSubmit={handleReportSubmit} />
+              ) },
+              { key: 'settings', label: 'Profile Settings', content: (
+                <ProfileSettings user={user} />
+              ) },
+              { key: 'notifications', label: 'Notifications', content: (
+                <Notifications notifications={notifications} />
+              ) }
+            ]} />
         </motion.div>
       </div>
     </PageTransition>

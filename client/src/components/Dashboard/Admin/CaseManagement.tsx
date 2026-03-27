@@ -1,8 +1,13 @@
 import { useState } from 'react';
-import { Button, Table, Modal, Form, Badge } from 'react-bootstrap';
-import { motion, AnimatePresence } from 'framer-motion';
+import React from 'react';
+import { Button } from '../../ui/Button';
+import { Badge } from '../../ui/Badge';
+import { Modal } from '../../ui/Modal';
+import { Table, TableHeader, TableHead, TableBody, TableCell, TableRow } from '../../ui/Table';
+import { FormGroup, FormLabel, FormSelect } from '../../ui/Form';
+import { AnimatePresence } from 'framer-motion';
 import GlassCard from '../common/GlassCard';
-import { CrimeReport, User } from '../../../api';
+import type { CrimeReport, User } from '../../../types';
 import toast from 'react-hot-toast';
 
 interface CaseManagementProps {
@@ -45,7 +50,7 @@ export default function CaseManagement({
       high: 'danger',
       critical: 'dark',
     };
-    return <Badge bg={colors[priority] || 'secondary'} className="text-uppercase">{priority}</Badge>;
+    return <Badge variant={colors[priority] || 'secondary'} className="text-uppercase">{priority}</Badge>;
   };
 
   return (
@@ -61,89 +66,90 @@ export default function CaseManagement({
       </div>
 
       <div className="table-responsive">
-        <Table hover className="mb-0">
-          <thead>
-            <tr>
-              <th>Case ID</th>
-              <th>Title</th>
-              <th>Priority</th>
-              <th>Status</th>
-              <th>Assigned To</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <AnimatePresence>
-              {cases.map((caseItem: CrimeReport, index: number) => (
-                <motion.tr
-                  key={caseItem.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                >
-                  <td className="text-muted font-monospace">#{String(caseItem.id).substring(0, 8)}</td>
-                  <td className="fw-medium">{caseItem.title}</td>
-                  <td>{getPriorityBadge(caseItem.priority)}</td>
-                  <td>
-                    <Badge bg={statusColors[caseItem.status] || 'secondary'}>
-                      {caseItem.status?.replace('_', ' ')}
-                    </Badge>
-                  </td>
-                  <td>{(caseItem as any).assignedTo?.name || 'Unassigned'}</td>
-                  <td>
-                    <Button
-                      variant="outline-primary"
-                      size="sm"
-                      className="me-2"
-                      onClick={() => handleAssign(caseItem)}
-                    >
-                      Assign
-                    </Button>
-                    <Form.Select
-                      size="sm"
-                      value={caseItem.status}
-                      onChange={(e) => handleStatusChange(caseItem.id, e.target.value)}
-                      style={{ width: 'auto', display: 'inline-block' }}
-                    >
-                      <option value="pending">Pending</option>
-                      <option value="investigating">Investigating</option>
-                      <option value="resolved">Resolved</option>
-                      <option value="closed">Closed</option>
-                    </Form.Select>
-                  </td>
-                </motion.tr>
-              ))}
-            </AnimatePresence>
-          </tbody>
+        <Table className="mb-0"> 
+          <TableHeader>
+            <TableRow>
+              <TableHead>Case ID</TableHead>
+              <TableHead>Title</TableHead>
+              <TableHead>Priority</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Assigned To</TableHead>
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {cases.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="h-24 text-center">
+                  No cases found
+                </TableCell>
+              </TableRow>
+            ) : (
+              <AnimatePresence>
+                {cases.map((caseItem: CrimeReport, index: number) => (
+                  <TableRow
+                    key={caseItem.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                  >
+                    <TableCell className="text-muted font-monospace">#{String(caseItem.id).padStart(8, '0')}</TableCell>
+                    <TableCell className="fw-medium">{caseItem.title}</TableCell>
+                    <TableCell>{getPriorityBadge(caseItem.priority)}</TableCell>
+                    <TableCell>
+                      <Badge variant={statusColors[caseItem.status] || 'secondary'}>
+                        {caseItem.status?.replace('_', ' ')}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{(caseItem as any).assignedTo?.name || 'Unassigned'}</TableCell>
+                    <TableCell>
+                      <Button
+                        variant="outline-primary"
+                        size="sm"
+                        className="me-2"
+                        onClick={() => handleAssign(caseItem)}
+                      >
+                        Assign
+                      </Button>
+                      <FormSelect
+                        size="sm"
+                        value={caseItem.status || ''}
+                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleStatusChange(caseItem.id!, e.target.value)}
+                        className="inline-block w-auto"
+                      >
+                        <option value="pending">Pending</option>
+                        <option value="investigating">Investigating</option>
+                        <option value="resolved">Resolved</option>
+                        <option value="closed">Closed</option>
+                      </FormSelect>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </AnimatePresence>
+            )}
+          </TableBody>
         </Table>
       </div>
 
-      <Modal show={showModal} onHide={() => setShowModal(false)} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>Assign Investigator</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <p>Select an investigator for case: <strong>{selectedCase?.title}</strong></p>
-          <Form>
-            <Form.Group>
-              <Form.Label>Investigator</Form.Label>
-              <Form.Select
-                onChange={(e) => {
-                  if (selectedCase && e.target.value) {
-                    onAssignInvestigator?.(selectedCase.id, parseInt(e.target.value));
-                    toast.success('Investigator assigned');
-                    setShowModal(false);
-                  }
-                }}
-              >
-                <option value="">Select Investigator...</option>
-                {investigators.map((inv) => (
-                  <option key={inv.id} value={inv.id}>{inv.name} ({inv.email})</option>
-                ))}
-              </Form.Select>
-            </Form.Group>
-          </Form>
-        </Modal.Body>
+      <Modal show={showModal} onHide={() => setShowModal(false)} title="Assign Investigator">
+        <p>Select an investigator for case: <strong>{selectedCase?.title}</strong></p>
+        <FormGroup>
+          <FormLabel>Investigator</FormLabel>
+          <FormSelect
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+              if (selectedCase && e.target.value) {
+                onAssignInvestigator?.(selectedCase.id!, parseInt(e.target.value));
+                toast.success('Investigator assigned');
+                setShowModal(false);
+              }
+            }}
+          >
+            <option value="">Select Investigator...</option>
+            {investigators.map((inv) => (
+              <option key={inv.id} value={inv.id}>{inv.name} ({inv.email})</option>
+            ))}
+          </FormSelect>
+        </FormGroup>
       </Modal>
     </GlassCard>
   );
