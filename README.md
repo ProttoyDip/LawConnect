@@ -1,7 +1,7 @@
 # LawConnect – Online Crime Reporting System  
 *Motto: One Click Can Make a Difference*
 
-[![Laravel](https://img.shields.io/badge/Laravel-10-orange)](https://laravel.com/) [![PHP](https://img.shields.io/badge/PHP-8.2-blue)](https://www.php.net/) [![MySQL](https://img.shields.io/badge/MySQL-8-green)](https://www.mysql.com/)
+[![Laravel](https://img.shields.io/badge/Laravel-10-orange)](https://laravel.com/) [![PHP](https://img.shields.io/badge/PHP-8.2-blue)](https://www.php.net/) [![MySQL](https://img.shields.io/badge/MySQL-8-green)](https://www.mysql.com/) [![Docker](https://img.shields.io/badge/Docker-Compose-blueviolet)](https://www.docker.com/)
 
 ---
 
@@ -111,9 +111,48 @@ https://drive.google.com/drive/folders/1hUNqsnLwtJfmVjsj9OrXvJyqs51tl0aa?usp=sha
 
 ## Technology Stack
 - **Backend:** Laravel (PHP)
-- **Frontend:** Blade Template Engine, Bootstrap / Tailwind CSS
-- **Database:** MySQL
-- **Rendering Method:** Server-Side Rendering (SSR)
+- **Frontend:** React + Vite + Tailwind CSS
+- **Database:** MySQL 8.0
+- **Containerization:** Docker Compose
+- **API:** RESTful
+
+---
+
+## Setup Instructions (Docker Compose - Recommended)
+1. **Prerequisites:** Install [Docker](https://www.docker.com/) and [Docker Compose](https://docs.docker.com/compose/).
+
+2. **Build and start services:**
+```bash
+docker compose up -d --build
+```
+
+3. **Generate app key:**
+```bash
+docker compose exec app php artisan key:generate
+```
+
+4. **Run migrations and seed:**
+```bash
+docker compose exec app php artisan migrate
+docker compose exec app php artisan db:seed
+```
+
+5. **Access the application:**
+- Backend/API: http://localhost:8000
+- MySQL (optional): http://localhost:3306 (root/root)
+
+6. **Stop services:**
+```bash
+docker compose down
+```
+
+### Alternative: Local Development (without Docker)
+1. Install PHP 8.2, Composer, Node.js, MySQL
+2. `cd server && composer install && cd ../client && npm install`
+3. Create MySQL DB `lawconnect`, update server/.env
+4. `cd server && php artisan key:generate && php artisan migrate --seed`
+5. `cd server && php artisan serve` + `cd client && npm run dev`
+6. Access: http://localhost:8000 + http://localhost:5173
 
 ---
 
@@ -143,36 +182,5 @@ A secure, reliable, and transparent online crime reporting system that improves 
 
 ---
 
-## Setup Instructions
-1. **Clone the repository:**  
-```bash
-git clone https://github.com/yourusername/LawConnect.git
-```
-2. **Install dependencies:**  
-```bash
-composer install
-npm install
-```
-3. **Configure environment:**  
-```bash
-cp .env.example .env
-php artisan key:generate
-```
-4. **Set up the database:**  
-```bash
-Create a MySQL database and update .env with DB credentials
-php artisan migrate --seed
-```
-5. **Run the application:**  
-```bash
-php artisan serve
-npm run dev
-```
-6. **Access the app:**  
-Open `http://localhost:8000` in your browser
-
----
-
 ## Conclusion
 LawConnect modernizes crime reporting by reducing manual processes and improving transparency. It provides citizens, police officers, and administrators with a secure and efficient platform where **one click can make a difference**.
-

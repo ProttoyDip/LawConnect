@@ -1,4 +1,5 @@
-import { Button } from 'react-bootstrap';
+import { Button } from '../../ui/Button';
+import React from 'react';
 import { motion } from 'framer-motion';
 import GlassCard from '../common/GlassCard';
 import toast from 'react-hot-toast';

@@ -1,5 +1,9 @@
 import { useState } from 'react';
-import { Button, Modal, Form, Badge } from 'react-bootstrap';
+import { Button } from '../../ui/Button';
+import { Badge } from '../../ui/Badge';
+import { Modal } from '../../ui/Modal';
+import { FormGroup, FormLabel, FormSelect, FormTextarea, FormInput } from '../../ui/Form';
+
 import { CrimeReport } from '../../../api';
 import toast from 'react-hot-toast';
 
@@ -42,47 +46,42 @@ export default function CaseUpdateModal({
   if (!caseItem) return null;
 
   return (
-    <Modal show={show} onHide={onHide} centered size="lg">
-      <Modal.Header closeButton>
-        <Modal.Title>Update Case: {caseItem.title}</Modal.Title>
-      </Modal.Header>
-      <Modal.Body>
+    <Modal show={show} onHide={onHide} title={`Update Case: ${caseItem.title}`} className="max-w-4xl">
+      <div className="p-6 space-y-4">
         <div className="mb-4">
           <h6>Case Details</h6>
           <p className="text-muted mb-1">ID: <span className="font-monospace">#{String(caseItem.id).substring(0, 8)}</span></p>
-          <p className="text-muted mb-1">Status: <Badge bg={statusColors[caseItem.status]}>{caseItem.status}</Badge></p>
-          <p className="text-muted mb-0">Priority: <Badge bg="danger">{caseItem.priority}</Badge></p>
+          <p className="text-muted mb-1">Status: <Badge variant={statusColors[caseItem.status]}>{caseItem.status}</Badge></p>
+          <p className="text-muted mb-0">Priority: <Badge variant="danger">{caseItem.priority}</Badge></p>
         </div>
 
-        <Form>
-          <Form.Group className="mb-3">
-            <Form.Label>Update Status</Form.Label>
-            <Form.Select
+        <FormGroup>
+            <FormLabel>Update Status</FormLabel>
+            <FormSelect
               value={status}
-              onChange={(e) => setStatus(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setStatus(e.target.value)}
             >
               <option value="">Select new status...</option>
               <option value="pending">Pending</option>
               <option value="investigating">Investigating</option>
               <option value="resolved">Resolved</option>
               <option value="closed">Closed</option>
-            </Form.Select>
-          </Form.Group>
+            </FormSelect>
+          </FormGroup>
 
-          <Form.Group className="mb-3">
-            <Form.Label>Add Notes</Form.Label>
-            <Form.Control
-              as="textarea"
+          <FormGroup>
+            <FormLabel>Add Notes</FormLabel>
+            <FormTextarea
               rows={4}
               value={notes}
-              onChange={(e) => setNotes(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNotes(e.target.value)}
               placeholder="Add notes about the case progress..."
             />
-          </Form.Group>
+          </FormGroup>
 
-          <Form.Group className="mb-3">
-            <Form.Label>Upload Evidence</Form.Label>
-            <Form.Control
+          <FormGroup>
+            <FormLabel>Upload Evidence</FormLabel>
+            <FormInput
               type="file"
               multiple
               accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx"
@@ -91,13 +90,12 @@ export default function CaseUpdateModal({
                 setFiles(target.files);
               }}
             />
-            <Form.Text className="text-muted">
+            <div className="text-muted text-xs mt-1">
               Upload supporting documents, images, or evidence files.
-            </Form.Text>
-          </Form.Group>
-        </Form>
-      </Modal.Body>
-      <Modal.Footer>
+            </div>
+          </FormGroup>
+      </div>
+      <div className="flex gap-2 justify-end p-6 border-t bg-gray-50 dark:bg-slate-800 rounded-b-lg">
         <Button variant="secondary" onClick={onHide}>
           Cancel
         </Button>
@@ -108,7 +106,7 @@ export default function CaseUpdateModal({
         >
           Update Case
         </Button>
-      </Modal.Footer>
+      </div>
     </Modal>
   );
 }

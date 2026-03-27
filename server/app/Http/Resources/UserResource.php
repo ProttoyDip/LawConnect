@@ -1,1 +1,23 @@
-<?php&#10;namespace App\Http\Resources;&#10;&#10;use Illuminate\Http\Request;&#10;use Illuminate\Http\Resources\Json\JsonResource;&#10;&#10;class UserResource extends JsonResource {&#10;    public function toArray(Request $request): array {&#10;        return [&#10;            'id'        => $this->id,&#10;            'name'      => $this->name,&#10;            'email'     => $this->email,&#10;            'roleId'    => $this->role_id,&#10;            'phone'     => $this->phone,&#10;            'address'   => $this->address,&#10;            'createdAt' => $this->created_at?->toIso8601String(),&#10;            'updatedAt' => $this->updated_at?->toIso8601String(),&#10;        ];&#10;    }&#10;}
+<?php
+
+namespace App\Http\Resources;
+
+use Illuminate\Http\Resources\Json\JsonResource;
+
+class UserResource extends JsonResource
+{
+    public function toArray($request)
+    {
+        return [
+            'id' => $this->id,
+            'name' => $this->name,
+            'email' => $this->email,
+            'national_id' => $this->national_id,
+            'role' => $this->role->name,
+            'phone' => $this->phone,
+            'address' => $this->address,
+            'created_at' => $this->created_at,
+        ];
+    }
+}
+

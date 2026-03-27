@@ -6,7 +6,9 @@ const BadgeVariants = {
   success: 'bg-green-100 text-green-800 border-green-200',
   secondary: 'bg-gray-100 text-gray-800 border-gray-200',
   danger: 'bg-red-100 text-red-800 border-red-200',
+  dark: 'bg-gray-800 text-gray-100 border-gray-700',
 } as const
+
 
 type BadgeVariant = keyof typeof BadgeVariants
 

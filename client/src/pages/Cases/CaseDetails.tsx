@@ -94,12 +94,7 @@ export default function CaseDetails() {
                     {report.status.replace('_', ' ')}
                   </span>
                 </div>
-                <div>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">
-                    Category
-                  </p>
-                  <p className="font-semibold capitalize">{report.category}</p>
-                </div>
+                {/* Category field removed - not available in CrimeReport type */}
                 <div>
                   <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                     Priority
@@ -128,40 +123,12 @@ export default function CaseDetails() {
                   <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                     Occurred
                   </p>
-                  <p>{formatDate(report.occurred_at)}</p>
+                  <p>{formatDate(report.created_at)}</p>
                 </div>
               </div>
             </motion.div>
 
-            {/* Evidence Section */}
-            {report.evidence && report.evidence.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className="bg-white dark:bg-slate-800 rounded-lg shadow-md p-6"
-              >
-                <h2 className="text-xl font-bold mb-4">Evidence Files</h2>
-                <div className="space-y-3">
-                  {report.evidence.map((file) => (
-                    <div
-                      key={file.id}
-                      className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-700 rounded-lg"
-                    >
-                      <div>
-                        <p className="font-semibold">{file.file_name}</p>
-                        <p className="text-sm text-slate-500 dark:text-slate-400">
-                          {(file.file_size / 1024).toFixed(2)} KB
-                        </p>
-                      </div>
-                      <button className="p-2 hover:bg-slate-200 dark:hover:bg-slate-600 rounded transition">
-                        <Download className="w-5 h-5" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
-            )}
+            {/* Evidence Section - To be implemented when evidence API is available */}
           </div>
 
           {/* Sidebar */}
