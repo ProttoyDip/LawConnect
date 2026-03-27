@@ -1,1 +1,23 @@
-<?php&#10;namespace App\Http\Resources;&#10;&#10;use Illuminate\Http\Request;&#10;use Illuminate\Http\Resources\Json\JsonResource;&#10;&#10;class EvidenceFileResource extends JsonResource {&#10;    public function toArray(Request $request): array {&#10;        return [&#10;            'id'            => $this->id,&#10;            'crimeReportId' => $this->crime_report_id,&#10;            'filePath'      => $this->file_path,&#10;            'fileType'      => $this->file_type,&#10;            'originalName'  => $this->original_name,&#10;            'fileSize'      => $this->file_size,&#10;            'uploadedBy'    => $this->uploaded_by,&#10;            'createdAt'     => $this->created_at?->toIso8601String(),&#10;            'updatedAt'     => $this->updated_at?->toIso8601String(),&#10;        ];&#10;    }&#10;}
+<?php
+
+namespace App\Http\Resources;
+
+use Illuminate\Http\Resources\Json\JsonResource;
+
+class EvidenceFileResource extends JsonResource
+{
+	public function toArray($request)
+	{
+		return [
+			'id' => $this->id,
+			'crimeReportId' => $this->crime_report_id,
+			'filePath' => $this->file_path,
+			'fileType' => $this->file_type,
+			'originalName' => $this->original_name,
+			'fileSize' => $this->file_size,
+			'uploadedBy' => $this->uploaded_by,
+			'createdAt' => $this->created_at?->toIso8601String(),
+			'updatedAt' => $this->updated_at?->toIso8601String(),
+		];
+	}
+}

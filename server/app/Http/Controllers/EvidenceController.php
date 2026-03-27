@@ -1,1 +1,48 @@
-<?php&#10;&#10;namespace App\Http\Controllers;&#10;&#10;use App\Http\Resources\EvidenceFileResource;&#10;use App\Models\CrimeReport;&#10;use App\Models\EvidenceFile;&#10;use App\Services\EvidenceService;&#10;use Illuminate\Http\JsonResponse;&#10;use Illuminate\Http\Request;&#10;&#10;class EvidenceController extends Controller&#10;{&#10;    public function __construct(private EvidenceService $evidenceService) {}&#10;&#10;    /**&#10;     * POST /crime-report/{id}/evidence  – upload evidence to an existing report&#10;     */&#10;    public function store(Request $request, int $id): JsonResponse&#10;    {&#10;        $request->validate([&#10;            'files'   => ['required', 'array', 'max:5'],&#10;            'files.*' => ['file', 'max:10240', 'mimes:jpg,jpeg,png,gif,pdf,doc,docx,mp4,avi'],&#10;        ]);&#10;&#10;        $report = CrimeReport::findOrFail($id);&#10;&#10;        $files = $this->evidenceService->storeFiles($report, $request->file('files'), $request->user());&#10;&#10;        return response()->json([&#10;            'message'  => count($files) . ' file(s) uploaded.',&#10;            'evidence' => EvidenceFileResource::collection($files),&#10;        ], 201);&#10;    }&#10;&#10;    /**&#10;     * DELETE /evidence/{id}  – admin removes evidence&#10;     */&#10;    public function destroy(int $id): JsonResponse&#10;    {&#10;        $evidence = EvidenceFile::findOrFail($id);&#10;        $this->authorize('delete', $evidence);&#10;&#10;        $this->evidenceService->delete($evidence);&#10;&#10;        return response()->json(['message' => 'Evidence deleted.']);&#10;    }&#10;}
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Http\Resources\EvidenceFileResource;
+use App\Models\CrimeReport;
+use App\Models\EvidenceFile;
+use App\Services\EvidenceService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+
+class EvidenceController extends Controller
+{
+	public function __construct(private EvidenceService $evidenceService) {}
+
+	/**
+	 * POST /crime-report/{id}/evidence - upload evidence to an existing report
+	 */
+	public function store(Request $request, int $id): JsonResponse
+	{
+		$request->validate([
+			'files' => ['required', 'array', 'max:5'],
+			'files.*' => ['file', 'max:10240', 'mimes:jpg,jpeg,png,gif,pdf,doc,docx,mp4,avi'],
+		]);
+
+		$report = CrimeReport::findOrFail($id);
+
+		$files = $this->evidenceService->storeFiles($report, $request->file('files'), $request->user());
+
+		return response()->json([
+			'message' => count($files) . ' file(s) uploaded.',
+			'evidence' => EvidenceFileResource::collection($files),
+		], 201);
+	}
+
+	/**
+	 * DELETE /evidence/{id} - admin removes evidence
+	 */
+	public function destroy(int $id): JsonResponse
+	{
+		$evidence = EvidenceFile::findOrFail($id);
+		$this->authorize('delete', $evidence);
+
+		$this->evidenceService->delete($evidence);
+
+		return response()->json(['message' => 'Evidence deleted.']);
+	}
+}
