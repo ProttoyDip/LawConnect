@@ -14,6 +14,11 @@ use App\Http\Controllers\AnalyticsController;
 |--------------------------------------------------------------------------
 */
 
+// ── CSRF Token Endpoint for SPA ────────────────────────────
+Route::get('/csrf-token', function () {
+    return response()->json(['csrf_token' => csrf_token()]);
+});
+
 // ── Public (guest) ─────────────────────────────────────────
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
@@ -26,6 +31,7 @@ Route::middleware(['auth:sanctum', 'log.api'])->group(function () {
     // Auth helpers
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/auth/me',      [AuthController::class, 'me']);
+    Route::put('/auth/me',      [AuthController::class, 'updateMe']);
 
     // Crime Reports – citizen creates, views own
     Route::post('/crime-report',    [CrimeReportController::class, 'store'])->middleware('role:citizen');
@@ -37,14 +43,14 @@ Route::middleware(['auth:sanctum', 'log.api'])->group(function () {
     Route::delete('/crime-report/{id}', [CrimeReportController::class, 'destroy'])->middleware('role:admin');
 
     // Crime Reports – list all (police + admin)
-    Route::get('/crime-reports', [CrimeReportController::class, 'index'])->middleware('role:police|admin');
+    Route::get('/crime-reports', [CrimeReportController::class, 'index'])->middleware('role:police,admin');
 
     // Evidence
-    Route::post('/crime-report/{id}/evidence', [EvidenceController::class, 'store'])->middleware('role:citizen|police');
+    Route::post('/crime-report/{id}/evidence', [EvidenceController::class, 'store'])->middleware('role:citizen,police');
     Route::delete('/evidence/{id}',            [EvidenceController::class, 'destroy'])->middleware('role:admin');
 
     // Status Updates
-    Route::put('/crime-report/{id}/status',    [StatusUpdateController::class, 'update'])->middleware('role:police|admin');
+    Route::put('/crime-report/{id}/status',    [StatusUpdateController::class, 'update'])->middleware('role:police,admin');
     Route::get('/crime-report/{id}/timeline',  [StatusUpdateController::class, 'timeline'])->middleware('case.owner');
 
     // Police Assignment (admin only)

@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Button } from 'react-bootstrap';
+import { Button } from '../../ui/Button';
 import { User } from '../../../api';
 import toast from 'react-hot-toast';
 
@@ -53,7 +53,7 @@ export default function ProfileHeader({ user, onLogout }: ProfileHeaderProps) {
           {/* Actions */}
           <div className="profile-actions">
             <Button
-              variant="outline-light"
+              variant="outline-secondary"
               className="profile-btn"
               onClick={handleEditProfile}
             >
@@ -63,7 +63,7 @@ export default function ProfileHeader({ user, onLogout }: ProfileHeaderProps) {
               Edit Profile
             </Button>
             <Button
-              variant="outline-light"
+              variant="outline-secondary"
               className="profile-btn profile-btn-logout"
               onClick={onLogout}
             >

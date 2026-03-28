@@ -51,7 +51,7 @@ export default function CaseUpdateModal({
         <div className="mb-4">
           <h6>Case Details</h6>
           <p className="text-muted mb-1">ID: <span className="font-monospace">#{String(caseItem.id).substring(0, 8)}</span></p>
-          <p className="text-muted mb-1">Status: <Badge variant={statusColors[caseItem.status]}>{caseItem.status}</Badge></p>
+          <p className="text-muted mb-1">Status: <Badge variant={statusColors[caseItem.status] || 'secondary'}>{caseItem.status}</Badge></p>
           <p className="text-muted mb-0">Priority: <Badge variant="danger">{caseItem.priority}</Badge></p>
         </div>
 

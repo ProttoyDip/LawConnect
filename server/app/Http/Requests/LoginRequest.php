@@ -10,13 +10,13 @@ class LoginRequest extends FormRequest {
 
     public function rules(): array {
         return [
-            'email'    => 'required|email|exists:users,email',
+            'email'    => 'required|email',
             'password' => 'required|min:6',
             'role_type' => 'nullable|in:general,investigator,admin',
             'admin_id'  => 'nullable|string|required_if:role_type,admin',
             'security_code' => 'nullable|string|required_if:role_type,admin',
             'badge_number'  => 'nullable|string|required_if:role_type,investigator',
-            'police_station' => 'nullable|string',
+            'police_station' => 'nullable|string|required_if:role_type,investigator',
             'national_id'   => 'nullable|string',
         ];
     }
@@ -28,4 +28,3 @@ class LoginRequest extends FormRequest {
         ];
     }
 }
-

@@ -21,12 +21,14 @@ class AuthController extends Controller
     {
         // Get the role - default to citizen if not specified
         $roleName = $request->input('role', Role::CITIZEN);
-        $role = Role::where('name', $roleName)->firstOrFail();
+        $role = Role::firstOrCreate(['name' => $roleName]);
 
 $user = User::create([
             'name'     => $request->name,
             'email'    => $request->email,
             'national_id' => $request->national_id,
+            'badge_number' => $request->badge_number,
+            'police_station' => $request->police_station,
             'password' => Hash::make($request->password),
             'role_id'  => $role->id,
             'phone'    => $request->phone,
@@ -67,9 +69,9 @@ $user = User::create([
                     ], 401);
                 }
             } elseif ($expectedRole === 'police') {
-                if (!$request->filled('badge_number')) {
+                if (!$request->filled('badge_number') || !$request->filled('police_station')) {
                     return response()->json([
-                        'message' => 'Badge number required'
+                        'message' => 'Badge number and police station are required'
                     ], 401);
                 }
             }
@@ -125,5 +127,29 @@ $user = User::create([
     public function me(Request $request): JsonResponse
     {
         return response()->json(new UserResource($request->user()->load('role')));
+    }
+
+    /**
+     * PUT /auth/me
+     */
+    public function updateMe(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'name' => 'sometimes|string|max:255',
+            'phone' => 'sometimes|nullable|string|max:20',
+            'address' => 'sometimes|nullable|string|max:1000',
+            'national_id' => 'sometimes|nullable|string|max:20|unique:users,national_id,' . $request->user()->id,
+            'badge_number' => 'sometimes|nullable|string|max:50|unique:users,badge_number,' . $request->user()->id,
+            'police_station' => 'sometimes|nullable|string|max:255',
+        ]);
+
+        $user = $request->user();
+        $user->fill($validated);
+        $user->save();
+
+        return response()->json([
+            'message' => 'Profile updated successfully.',
+            'user' => new UserResource($user->load('role')),
+        ]);
     }
 }

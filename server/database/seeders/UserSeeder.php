@@ -40,8 +40,23 @@ class UserSeeder extends Seeder
             ['email' => 'citizen@lawconnect.com'],
             [
                 'name'              => 'Jane Citizen',
+                'national_id'       => '199001010000',
                 'password'          => $password,
                 'role_id'           => Role::where('name', Role::CITIZEN)->first()->id,
+                'email_verified_at' => now(),
+            ]
+        );
+
+        // Citizen - Prottoy Saha Dip
+        User::updateOrCreate(
+            ['email' => 'prottoysahadip2@gmail.com'],
+            [
+                'name'              => 'Prottoy Saha Dip',
+                'national_id'       => '1961132220',
+                'password'          => $password,
+                'role_id'           => Role::where('name', Role::CITIZEN)->first()->id,
+                'phone'             => '01700000000',
+                'address'           => 'Dhaka, Bangladesh',
                 'email_verified_at' => now(),
             ]
         );

@@ -1,9 +1,8 @@
 import { useState } from 'react';
-import React, { ChangeEvent } from 'react';
 import { Button } from '../../ui/Button';
 import { Badge } from '../../ui/Badge';
 import { Modal } from '../../ui/Modal';
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '../../ui/Table';
+import { Table } from '../../ui/Table';
 import { motion, AnimatePresence } from 'framer-motion';
 import GlassCard from '../common/GlassCard';
 import { User } from '../../../api';
@@ -56,12 +55,12 @@ export default function UserManagement({
   };
 
   const getRoleBadge = (role: string) => {
-    const variants: Record<string, string> = {
+    const variants: Record<string, 'danger' | 'info' | 'success' | 'secondary'> = {
       admin: 'danger',
       police: 'info',
       citizen: 'success',
     };
-    return <Badge bg={variants[role] || 'secondary'}>{role}</Badge>;
+    return <Badge variant={variants[role] || 'secondary'}>{role}</Badge>;
   };
 
   return (
@@ -84,7 +83,7 @@ export default function UserManagement({
       </div>
 
       <div className="table-responsive">
-        <Table hover className="mb-0">
+        <Table className="mb-0">
           <thead>
             <tr>
               <th>ID</th>
@@ -131,69 +130,73 @@ export default function UserManagement({
         </Table>
       </div>
 
-      <Modal show={showModal} onHide={() => setShowModal(false)} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>{editingUser ? 'Edit User' : 'Add New User'}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form>
-            <Form.Group className="mb-3">
-              <Form.Label>Name</Form.Label>
-              <Form.Control
-                type="text"
-                value={editingUser?.name || newUser.name}
-                onChange={(e) => {
-                  if (editingUser) {
-                    setEditingUser({ ...editingUser, name: e.target.value });
-                  } else {
-                    setNewUser({ ...newUser, name: e.target.value });
-                  }
-                }}
-                placeholder="Enter name"
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Email</Form.Label>
-              <Form.Control
-                type="email"
-                value={editingUser?.email || newUser.email}
-                onChange={(e) => {
-                  if (editingUser) {
-                    setEditingUser({ ...editingUser, email: e.target.value });
-                  } else {
-                    setNewUser({ ...newUser, email: e.target.value });
-                  }
-                }}
-                placeholder="Enter email"
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Role</Form.Label>
-              <Form.Select
-                value={editingUser?.role || newUser.role}
-                onChange={(e) => {
-                  if (editingUser) {
-                    setEditingUser({ ...editingUser, role: e.target.value as 'citizen' | 'police' | 'admin' });
-                  } else {
-                    setNewUser({ ...newUser, role: e.target.value });
-                  }
-                }}
-              >
-                <option value="citizen">Citizen</option>
-                <option value="police">Investigator</option>
-                <option value="admin">Admin</option>
-              </Form.Select>
-            </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)}>
-            Cancel
-          </Button>
-          <Button variant="primary" onClick={handleSave}>
-            {editingUser ? 'Update' : 'Add User'}
-          </Button>
-        </Modal.Footer>
+      <Modal
+        show={showModal}
+        onHide={() => setShowModal(false)}
+        title={editingUser ? 'Edit User' : 'Add New User'}
+        footer={(
+          <div className="flex gap-2">
+            <Button variant="secondary" onClick={() => setShowModal(false)}>
+              Cancel
+            </Button>
+            <Button variant="primary" onClick={handleSave}>
+              {editingUser ? 'Update' : 'Add User'}
+            </Button>
+          </div>
+        )}
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Name</label>
+            <input
+              type="text"
+              value={editingUser?.name || newUser.name}
+              onChange={(e) => {
+                if (editingUser) {
+                  setEditingUser({ ...editingUser, name: e.target.value });
+                } else {
+                  setNewUser({ ...newUser, name: e.target.value });
+                }
+              }}
+              placeholder="Enter name"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Email</label>
+            <input
+              type="email"
+              value={editingUser?.email || newUser.email}
+              onChange={(e) => {
+                if (editingUser) {
+                  setEditingUser({ ...editingUser, email: e.target.value });
+                } else {
+                  setNewUser({ ...newUser, email: e.target.value });
+                }
+              }}
+              placeholder="Enter email"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Role</label>
+            <select
+              value={editingUser?.role || newUser.role}
+              onChange={(e) => {
+                if (editingUser) {
+                  setEditingUser({ ...editingUser, role: e.target.value as 'citizen' | 'police' | 'admin' });
+                } else {
+                  setNewUser({ ...newUser, role: e.target.value });
+                }
+              }}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+            >
+              <option value="citizen">Citizen</option>
+              <option value="police">Investigator</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+        </div>
       </Modal>
     </GlassCard>
   );

@@ -4,7 +4,7 @@ import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/Table';
 import { Modal } from '../components/ui/Modal';
-import { FormLabel, FormInput, FormSelect, FormTextarea } from '../components/ui/Form'; // Create if needed, or use HTML
+import { FormGroup, FormLabel, FormSelect, FormTextarea } from '../components/ui/Form';
 import ApiClient, { CrimeReport, User } from '../api';
 import toast from 'react-hot-toast';
 import PageTransition from '../components/PageTransition';

@@ -9,19 +9,20 @@ const BadgeVariants = {
   dark: 'bg-gray-800 text-gray-100 border-gray-700',
 } as const
 
-
 type BadgeVariant = keyof typeof BadgeVariants
 
 interface BadgeProps {
-  variant?: BadgeVariant
+  variant?: BadgeVariant | string
   className?: string
   children: React.ReactNode
 }
 
 export function Badge({ variant = 'secondary', className = '', children }: BadgeProps) {
+  const resolvedVariant = BadgeVariants[variant as BadgeVariant] || BadgeVariants.secondary
+
   return (
     <span 
-      className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium border ${BadgeVariants[variant]} ${className}`}
+      className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium border ${resolvedVariant} ${className}`}
     >
       {children}
     </span>

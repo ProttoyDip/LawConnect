@@ -1,17 +1,26 @@
-import { ReactNode, HTMLAttributes } from 'react'
-import { motion } from 'framer-motion'
+import { ReactNode } from 'react'
+import { motion, type HTMLMotionProps } from 'framer-motion'
 
 
 interface TableProps {
   children: ReactNode
   className?: string
   responsive?: boolean
+  striped?: boolean
+  hover?: boolean
 }
 
-export function Table({ className = '', responsive = true, children }: TableProps) {
+export function Table({ className = '', responsive = true, striped = false, hover = false, children }: TableProps) {
+  const tableClasses = [
+    'w-full text-sm',
+    striped ? '[&_tbody_tr:nth-child(even)]:bg-gray-50 dark:[&_tbody_tr:nth-child(even)]:bg-slate-800/50' : '',
+    hover ? '[&_tbody_tr:hover]:bg-gray-50 dark:[&_tbody_tr:hover]:bg-slate-800' : '',
+    className,
+  ].filter(Boolean).join(' ')
+
   return (
     <div className={`w-full ${responsive ? 'overflow-x-auto rounded-lg border' : ''}`}>
-      <table className={`w-full text-sm ${className}`}>
+      <table className={tableClasses}>
         {children}
       </table>
     </div>
@@ -34,16 +43,9 @@ export function TableBody({ className = '', ...props }: React.HTMLAttributes<HTM
 }
 
 
-export function TableRow({ className = '', initial, animate, transition, ...props }: React.HTMLAttributes<HTMLTableRowElement> & {
-  initial?: { opacity: number; x: number };
-  animate?: { opacity: number; x: number };
-  transition?: { delay: number };
-}) {
+export function TableRow({ className = '', ...props }: HTMLMotionProps<'tr'>) {
   return (
     <motion.tr
-      initial={initial}
-      animate={animate}
-      transition={transition}
       className={`border-b border-gray-200 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors ${className}`}
       {...props}
     />
@@ -51,7 +53,7 @@ export function TableRow({ className = '', initial, animate, transition, ...prop
 }
 
 
-export function TableHead({ className = '', ...props }: React.HTMLAttributes<HTMLTableCellElement>) {
+export function TableHead({ className = '', ...props }: React.ThHTMLAttributes<HTMLTableCellElement>) {
   return (
     <th
       className={`h-12 px-4 text-left align-middle font-semibold text-gray-900 dark:text-white ${className}`}
@@ -60,7 +62,7 @@ export function TableHead({ className = '', ...props }: React.HTMLAttributes<HTM
   )
 }
 
-export function TableCell({ className = '', ...props }: React.HTMLAttributes<HTMLTableCellElement>) {
+export function TableCell({ className = '', ...props }: React.TdHTMLAttributes<HTMLTableCellElement>) {
   return (
     <td
       className={`p-4 align-middle text-gray-900 dark:text-white ${className}`}

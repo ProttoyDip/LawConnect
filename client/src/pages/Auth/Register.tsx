@@ -18,6 +18,8 @@ export default function Register() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [nationalId, setNationalId] = useState('');
+  const [badgeNumber, setBadgeNumber] = useState('');
+  const [policeStation, setPoliceStation] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [password, setPassword] = useState('');
@@ -29,7 +31,14 @@ export default function Register() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!name || !email || !password || !confirmPassword || (role === 'citizen' && !nationalId.trim())) {
+    if (
+      !name ||
+      !email ||
+      !password ||
+      !confirmPassword ||
+      (role === 'citizen' && !nationalId.trim()) ||
+      (role === 'police' && (!badgeNumber.trim() || !policeStation.trim()))
+    ) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -44,7 +53,18 @@ export default function Register() {
 
     setLoading(true);
     try {
-      const data = await apiClient.register(name, email, password, confirmPassword, nationalId, role, phone, address);
+      const data = await apiClient.register(
+        name,
+        email,
+        password,
+        confirmPassword,
+        nationalId,
+        role,
+        phone,
+        address,
+        badgeNumber,
+        policeStation
+      );
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
       toast.success('Registration successful');
@@ -167,6 +187,47 @@ export default function Register() {
                   />
                 </div>
               </div>
+            )}
+
+            {/* Police fields */}
+            {role === 'police' && (
+              <>
+                <div>
+                  <label htmlFor="badgeNumber" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                    Badge Number *
+                  </label>
+                  <div className="relative">
+                    <Shield className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
+                    <input
+                      id="badgeNumber"
+                      type="text"
+                      value={badgeNumber}
+                      onChange={(e) => setBadgeNumber(e.target.value)}
+                      className="input-field pl-12 pr-4"
+                      placeholder="Enter your badge number"
+                      maxLength={50}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="policeStation" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                    Police Station *
+                  </label>
+                  <div className="relative">
+                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
+                    <input
+                      id="policeStation"
+                      type="text"
+                      value={policeStation}
+                      onChange={(e) => setPoliceStation(e.target.value)}
+                      className="input-field pl-12 pr-4"
+                      placeholder="Enter your station"
+                      maxLength={255}
+                    />
+                  </div>
+                </div>
+              </>
             )}
 
             {/* Phone */}
