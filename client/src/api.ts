@@ -10,6 +10,9 @@ export interface User {
   email: string;
   phone?: string;
   address?: string;
+  national_id?: string;
+  badge_number?: string;
+  police_station?: string;
   role: 'citizen' | 'police' | 'admin';
 }
 
@@ -32,6 +35,11 @@ export interface StatusUpdate {
   notes?: string;
   remarks?: string;
   created_at: string;
+  createdAt?: string;
+  created_by?: number;
+  createdBy?: number;
+  crime_report_id?: number;
+  crimeReportId?: number;
 }
 
 export interface CrimeReport {
@@ -43,46 +51,97 @@ export interface CrimeReport {
   priority: string;
   status: string;
   occurred_at?: string;
+  occurredAt?: string;
   user_id: number;
+  userId?: number;
   created_at: string;
+  createdAt?: string;
   updated_at: string;
+  updatedAt?: string;
   user?: User;
   evidence?: EvidenceFile[];
   status_updates?: StatusUpdate[];
+  statusUpdates?: StatusUpdate[];
 }
 
 /* ──────────────────────────── Client ─────────────────────────── */
 
 class ApiClient {
   private client: AxiosInstance;
+  private csrfToken: string | null = null;
 
   constructor() {
     this.client = axios.create({
       baseURL: secrets.backendEndpoint,
+      timeout: 15000,
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json',
       },
+      withCredentials: true,
     });
 
-    // Attach token from localStorage on every request
-    this.client.interceptors.request.use((config) => {
+    // Fetch CSRF token on initialization
+    this.fetchCsrfToken();
+
+    // Attach token and CSRF token on every request
+    this.client.interceptors.request.use(async (config) => {
       const token = localStorage.getItem('token');
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
+
+      // Ensure CSRF token is present for mutating requests.
+      if (['post', 'put', 'patch', 'delete'].includes(config.method?.toLowerCase() || '')) {
+        if (!this.csrfToken) {
+          await this.fetchCsrfToken();
+        }
+        if (this.csrfToken) {
+          config.headers['X-CSRF-TOKEN'] = this.csrfToken;
+        }
+      }
+
       return config;
     });
   }
 
+  private async fetchCsrfToken() {
+    try {
+      const response = await axios.get(`${secrets.backendEndpoint || ''}/api/csrf-token`, {
+        withCredentials: true,
+      });
+      this.csrfToken = response.data.csrf_token;
+    } catch (error) {
+      console.warn('Failed to fetch CSRF token:', error);
+      // Fallback: try to get from meta tag
+      const metaToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+      if (metaToken) {
+        this.csrfToken = metaToken;
+      }
+    }
+  }
+
   /* ── Auth ───────────────────────────────────────────────── */
 
-  async register(name: string, email: string, password: string, password_confirmation: string, nationalId?: string, role: string = 'citizen', phone?: string, address?: string) {
+  async register(
+    name: string,
+    email: string,
+    password: string,
+    password_confirmation: string,
+    nationalId?: string,
+    role: string = 'citizen',
+    phone?: string,
+    address?: string,
+    badgeNumber?: string,
+    policeStation?: string
+  ) {
     try {
       const response = await this.client.post('/api/auth/register', {
         name,
         email,
         ...(nationalId && { national_id: nationalId }),
+        ...(badgeNumber && { badge_number: badgeNumber }),
+        ...(policeStation && { police_station: policeStation }),
         password,
         password_confirmation,
         role,
@@ -225,6 +284,20 @@ class ApiClient {
 
   handleError(error: any) {
     if (error.response) {
+      const status = error.response.status;
+      const requestUrl = String(error.config?.url || '');
+      const isAuthAttempt = /\/api\/auth\/(login|register)/.test(requestUrl);
+
+      if (status === 401 && !isAuthAttempt) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        toast.error('Session expired. Please sign in again.');
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
+        return;
+      }
+
       const msg =
         error.response.data?.message ||
         error.response.data?.error ||
@@ -234,8 +307,9 @@ class ApiClient {
       console.error('Full response:', error.response.data);
       toast.error(msg);
     } else if (error.request) {
+      const apiBase = this.client.defaults.baseURL || window.location.origin;
       console.error('API Error: No response received', error.request);
-      toast.error('No response from server');
+      toast.error(`Cannot reach API server (${apiBase}). Make sure backend is running.`);
     } else {
       console.error('API Error:', error.message);
       toast.error(error.message || 'Something went wrong');

@@ -40,7 +40,7 @@ const StatCard = ({ stat }: { stat: Stat }) => {
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -8 }}
       className={cn(
-        'stats-card group relative overflow-hidden p-6 rounded-2xl border border-white/20 shadow-2xl',
+        'stats-card group relative overflow-hidden rounded-2xl border border-slate-200/70 dark:border-white/20 shadow-2xl',
         variants[stat.variant]
       )}
     >
@@ -116,7 +116,7 @@ export default function OverviewStats({ stats }: OverviewStatsProps) {
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
       {statData.map((stat) => (
         <StatCard key={stat.label} stat={stat} />
       ))}

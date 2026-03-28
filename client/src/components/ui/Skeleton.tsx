@@ -1,5 +1,3 @@
-import { type ComponentProps } from 'react';
-
 export const Skeleton = ({
   className = '',
 }: { className?: string }) => (

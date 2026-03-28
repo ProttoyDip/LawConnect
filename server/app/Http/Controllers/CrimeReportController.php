@@ -51,6 +51,19 @@ class CrimeReportController extends Controller
 	 */
 	public function myReports(Request $request): JsonResponse
 	{
+        // TEMP DEBUG - Remove after fix
+        $user = $request->user();
+        if ($user) {
+            \Log::info('myReports DEBUG', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'role_id' => $user->role_id,
+                'role_name' => $user->role?->name,
+                'service_user_id' => $user->id
+            ]);
+            // dd($user->load('role')->toArray());  // UNCOMMENT for immediate dump
+        }
+		
 		$reports = $this->reportService->getForCitizen($request->user());
 
 		return response()->json(CrimeReportResource::collection($reports));

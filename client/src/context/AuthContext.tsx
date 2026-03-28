@@ -1,4 +1,6 @@
 import { createContext, useContext, ReactNode } from 'react';
+import ApiClient from '../api';
+
 
 interface User {
   id: number;
@@ -21,10 +23,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (_email: string, _password: string) => {
     // Implementation would go here
   };
-  const logout = () => {
+const logout = async () => {
+    const apiClient = new ApiClient();
+    try {
+      await apiClient.logout();
+    } catch (e) {
+      console.warn('Logout API failed, clearing local state:', e);
+    }
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    localStorage.removeItem('readNotifications');
   };
+
   const isAuthenticated = !!localStorage.getItem('token');
 
   return (

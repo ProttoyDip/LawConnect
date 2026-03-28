@@ -85,7 +85,9 @@ export interface RegisterFormData {
   email: string;
   password: string;
   password_confirmation: string;
-  national_id: string;
+  national_id?: string;
+  badge_number?: string;
+  police_station?: string;
   role_type?: string;
 }
 

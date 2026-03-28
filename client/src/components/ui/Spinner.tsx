@@ -1,5 +1,3 @@
-import { ReactNode } from 'react';
-
 interface SpinnerProps {
   className?: string;
   size?: 'sm' | 'md' | 'lg';

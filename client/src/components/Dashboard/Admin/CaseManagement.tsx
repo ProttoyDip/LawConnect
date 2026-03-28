@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import React from 'react';
 import { Button } from '../../ui/Button';
 import { Badge } from '../../ui/Badge';
 import { Modal } from '../../ui/Modal';
@@ -112,10 +111,9 @@ export default function CaseManagement({
                         Assign
                       </Button>
                       <FormSelect
-                        size="sm"
                         value={caseItem.status || ''}
                         onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleStatusChange(caseItem.id!, e.target.value)}
-                        className="inline-block w-auto"
+                        className="inline-block w-auto py-1.5 text-sm"
                       >
                         <option value="pending">Pending</option>
                         <option value="investigating">Investigating</option>

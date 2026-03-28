@@ -1,4 +1,4 @@
-import { Badge } from 'react-bootstrap';
+import { Badge } from '../../ui/Badge';
 import { motion, AnimatePresence } from 'framer-motion';
 import GlassCard from '../common/GlassCard';
 import { CrimeReport } from '../../../api';
@@ -47,7 +47,7 @@ export default function AssignedCases({ cases, onCaseClick }: AssignedCasesProps
             >
               <div className="d-flex justify-content-between align-items-start mb-2">
                 <h6 className="mb-0 case-title">{caseItem.title}</h6>
-                <Badge bg={priorityColors[caseItem.priority] || 'secondary'} className="text-uppercase">
+                <Badge variant={priorityColors[caseItem.priority] || 'secondary'} className="text-uppercase">
                   {caseItem.priority}
                 </Badge>
               </div>
@@ -55,7 +55,7 @@ export default function AssignedCases({ cases, onCaseClick }: AssignedCasesProps
                 {caseItem.description?.substring(0, 100)}...
               </p>
               <div className="d-flex justify-content-between align-items-center">
-                <Badge bg={statusColors[caseItem.status] || 'secondary'}>
+                <Badge variant={statusColors[caseItem.status] || 'secondary'}>
                   {caseItem.status?.replace('_', ' ')}
                 </Badge>
                 <small className="text-muted">

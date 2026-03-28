@@ -3,8 +3,10 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 
-import ApiClient, { User, CrimeReport } from '../api';
+import ApiClient, { User, CrimeReport, StatusUpdate } from '../api';
 import PageTransition from '../components/PageTransition';
+import { useTheme } from '../context/ThemeContext';
+import { cn } from '../utils/cn';
 
 // New layout & common
 import Sidebar from '../components/layout/Sidebar';
@@ -40,10 +42,11 @@ interface CitizenStats {
 export default function Dashboard() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { theme, toggleTheme } = useTheme();
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   
   const [myReports, setMyReports] = useState<CrimeReport[]>([]);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
@@ -57,13 +60,27 @@ export default function Dashboard() {
   // Tab state from URL
   const currentTab = searchParams.get('tab') || 'overview';
 
-  const handleReportSubmit = async (data: { title: string; description: string; category: string; location: string; priority: string; files: FileList | null }) => {
+  const handleReportSubmit = async (data: {
+    title: string;
+    description: string;
+    category: string;
+    location: string;
+    priority: string;
+    occurredAt?: string;
+    files: File[];
+  }) => {
     const formData = new FormData();
     formData.append('title', data.title);
     formData.append('category', data.category);
     formData.append('description', data.description);
     formData.append('location', data.location);
     formData.append('priority', data.priority);
+    if (data.occurredAt) {
+      formData.append('occurred_at', data.occurredAt);
+    }
+    data.files.forEach((file) => {
+      formData.append('evidence[]', file);
+    });
     
     try {
       await apiClient.createCrimeReport(formData);
@@ -71,28 +88,24 @@ export default function Dashboard() {
       fetchDashboardData();
     } catch (error) {
       console.error('Error submitting report:', error);
+      throw error;
     }
   };
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
-    const storedDarkMode = localStorage.getItem('darkMode') === 'true';
     
     if (storedUser) {
       const userData = JSON.parse(storedUser);
       setUser(userData);
       if (userData.role !== 'citizen') {
-        navigate('/admin');
+        navigate('/dashboard');
         return;
       }
-      fetchDashboardData();
+      fetchDashboardData(true);
     } else {
       navigate('/login');
-    }
-
-    setIsDarkMode(storedDarkMode);
-    if (storedDarkMode) {
-      document.documentElement.classList.add('dark');
+      setInitialLoading(false);
     }
   }, [navigate]);
 
@@ -102,28 +115,70 @@ export default function Dashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  const fetchDashboardData = async () => {
-    setLoading(true);
+  const fetchDashboardData = async (showInitialLoader = false) => {
+    if (showInitialLoader) {
+      setInitialLoading(true);
+    }
+
     try {
       const reportsRes = await apiClient.getMyReports();
-      setMyReports(Array.isArray(reportsRes) ? reportsRes : reportsRes.data || []);
-      setNotifications([
-        // Mock notifications for now
-        { id: 1, title: 'Report #123 Status Updated', message: 'Your report is now under investigation', type: 'status', timestamp: new Date().toISOString(), read: false },
-        { id: 2, title: 'New Message', message: 'Officer replied to your report', type: 'response', timestamp: new Date(Date.now() - 3600000).toISOString(), read: true },
-      ]);
+      const reports = Array.isArray(reportsRes) ? reportsRes : reportsRes.data || [];
+      setMyReports(reports);
 
+        // Generate notifications from status updates
+        const generatedNotifications: NotificationItem[] = [];
+        const readNotifications = JSON.parse(localStorage.getItem('readNotifications') || '[]');
+
+        reports.forEach((report: CrimeReport) => {
+          const updates = report.status_updates || report.statusUpdates || [];
+          if (updates.length > 0) {
+            updates.forEach((update: StatusUpdate) => {
+              const timestamp = update.created_at || update.createdAt || new Date().toISOString();
+              generatedNotifications.push({
+                id: update.id,
+                title: `Report "${report.title}" – Status Changed`,
+                message: update.notes || update.remarks || `Status: ${report.status.replace(/_/g, ' ')}`,
+                type: 'status',
+                timestamp,
+                read: readNotifications.includes(update.id),
+              });
+            });
+          }
+        });
+
+        generatedNotifications.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+        // Add a welcome notification if user has no updates
+        if (generatedNotifications.length === 0) {
+          generatedNotifications.push({
+            id: 0,
+            title: 'Welcome to LawConnect',
+            message: 'Submit your first crime report to get started',
+            type: 'update',
+            timestamp: new Date().toISOString(),
+            read: false,
+          });
+        }
+
+        setNotifications(generatedNotifications);
       // Mock stats
       setStats({
-        totalReports: reportsRes.length || 0,
-        pending: reportsRes.filter((r: CrimeReport) => r.status === 'pending').length,
-        resolved: reportsRes.filter((r: CrimeReport) => r.status === 'resolved' || r.status === 'closed').length,
+        totalReports: reports.length,
+        pending: reports.filter((r: CrimeReport) => r.status === 'pending').length,
+        resolved: reports.filter((r: CrimeReport) => r.status === 'resolved' || r.status === 'closed').length,
         recentActivity: 3
       });
     } catch (error) {
       console.error('Dashboard data error:', error);
+      if ((error as any)?.response?.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        navigate('/login');
+      }
     } finally {
-      setLoading(false);
+      if (showInitialLoader) {
+        setInitialLoading(false);
+      }
     }
   };
 
@@ -137,30 +192,32 @@ export default function Dashboard() {
     navigate('/login');
   }, [navigate]);
 
-  const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
+    const handleMarkNotificationAsRead = (notificationId: number) => {
+      const readNotifications = JSON.parse(localStorage.getItem('readNotifications') || '[]');
+      if (!readNotifications.includes(notificationId)) {
+        readNotifications.push(notificationId);
+        localStorage.setItem('readNotifications', JSON.stringify(readNotifications));
+      }
+      setNotifications(prev =>
+        prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
+      );
+    };
 
-  const toggleDarkMode = () => {
-    const newDarkMode = !isDarkMode;
-    setIsDarkMode(newDarkMode);
-    localStorage.setItem('darkMode', newDarkMode.toString());
-    if (newDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  };
+  const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
+  const openMobileSidebar = () => setIsMobileSidebarOpen(true);
+  const closeMobileSidebar = () => setIsMobileSidebarOpen(false);
 
   const updateTab = (tab: string) => {
     setSearchParams({ tab });
   };
 
-  if (loading || !user) {
+  if (initialLoading || !user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-8">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors flex items-center justify-center p-8">
         <motion.div 
           animate={{ rotate: 360 }}
           transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-          className="w-16 h-16 border-4 border-white/20 border-t-white rounded-full"
+          className="w-16 h-16 border-4 border-slate-300 dark:border-white/20 border-t-slate-700 dark:border-t-white rounded-full"
         />
       </div>
     );
@@ -177,11 +234,11 @@ export default function Dashboard() {
       case 'reports':
         return <MyReports reports={myReports} />;
       case 'submit':
-        return <SubmitReport onSubmit={handleReportSubmit} />;
+        return <SubmitReport onSubmit={handleReportSubmit} onViewReports={() => updateTab('reports')} />;
       case 'profile':
         return <ProfileSettings user={user} />;
       case 'notifications':
-        return <Notifications notifications={notifications} />;
+          return <Notifications notifications={notifications} onMarkAsRead={handleMarkNotificationAsRead} />;
       default:
         return <EmptyState 
           title="Welcome to LawConnect" 
@@ -193,25 +250,39 @@ export default function Dashboard() {
 
   return (
     <PageTransition>
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-900/20 to-slate-900/80">
-        <div className="flex">
+      <div className="relative min-h-screen overflow-x-hidden bg-slate-50 dark:bg-slate-900 transition-colors">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(99,102,241,0.12),transparent_55%)] dark:bg-[radial-gradient(circle_at_top_right,rgba(99,102,241,0.22),transparent_55%)]" />
+        <div className="relative flex min-w-0">
           {/* Sidebar */}
           <Sidebar 
             isCollapsed={isSidebarCollapsed}
             onToggle={toggleSidebar}
+            isMobileOpen={isMobileSidebarOpen}
+            onCloseMobile={closeMobileSidebar}
+            onLogout={handleLogout}
           />
           
-          <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex min-w-0 flex-1 flex-col overflow-x-hidden">
             {/* Header */}
             <Header 
               user={user}
               onLogout={handleLogout}
               notificationsCount={notifications.filter(n => !n.read).length}
-              onToggleDarkMode={toggleDarkMode}
+              isDarkMode={theme === 'dark'}
+              onToggleDarkMode={toggleTheme}
+              onOpenMobileMenu={openMobileSidebar}
+              onOpenNotifications={() => updateTab('notifications')}
             />
 
             {/* Main Content */}
-            <main className="flex-1 p-8 overflow-y-auto">
+            <main
+              onClick={() => {
+                if (isMobileSidebarOpen) {
+                  closeMobileSidebar();
+                }
+              }}
+              className={cn('flex-1 p-4 sm:p-6 lg:p-8', currentTab === 'submit' ? 'overflow-hidden' : 'overflow-y-auto')}
+            >
               <motion.div
                 key={currentTab}
                 initial={{ opacity: 0, x: 20 }}

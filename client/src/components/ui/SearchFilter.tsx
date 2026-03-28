@@ -67,8 +67,6 @@ export default function SearchFilter({
 
   const filterCount = Object.values(activeFilters).reduce((sum, filters) => sum + filters.length, 0);
 
-  const allOptions = [...statusOptions, ...categoryOptions, ...priorityOptions];
-
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
