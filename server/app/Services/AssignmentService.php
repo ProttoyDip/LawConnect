@@ -6,6 +6,7 @@ use App\Models\CrimeReport;
 use App\Models\PoliceAssignment;
 use App\Models\Role;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
 class AssignmentService
 {
@@ -20,13 +21,18 @@ class AssignmentService
             throw new \InvalidArgumentException('The selected user is not a police officer.');
         }
 
-        $assignment = PoliceAssignment::create([
-            'crime_report_id' => $crimeReportId,
-            'officer_id'      => $officerId,
-            'assigned_by'     => $assigner->id,
-            'notes'           => $notes,
-            'assigned_at'     => now(),
-        ]);
+        $assignment = DB::transaction(function () use ($crimeReportId, $officerId, $assigner, $notes) {
+            // Keep a single current assignment row per case.
+            PoliceAssignment::where('crime_report_id', $crimeReportId)->delete();
+
+            return PoliceAssignment::create([
+                'crime_report_id' => $crimeReportId,
+                'officer_id'      => $officerId,
+                'assigned_by'     => $assigner->id,
+                'notes'           => $notes,
+                'assigned_at'     => now(),
+            ]);
+        });
 
         // Move report status to under_review if still pending
         $report = CrimeReport::findOrFail($crimeReportId);

@@ -26,7 +26,7 @@ class AssignmentController extends Controller
             return response()->json([
                 'message'    => 'Officer assigned successfully.',
                 'assignment' => $assignment->load('officer', 'crimeReport'),
-            ], 201);
+            ], $assignment->wasRecentlyCreated ? 201 : 200);
         } catch (\InvalidArgumentException $e) {
             return response()->json(['message' => $e->getMessage()], 422);
         }

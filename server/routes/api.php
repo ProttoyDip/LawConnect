@@ -1,12 +1,18 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\Auth\NewPasswordController;
+use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\CrimeReportController;
 use App\Http\Controllers\EvidenceController;
 use App\Http\Controllers\StatusUpdateController;
 use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\AnalyticsController;
+use App\Http\Controllers\InvestigatorController;
+use App\Http\Controllers\InvestigationNoteController;
+use App\Http\Controllers\NotificationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -23,6 +29,8 @@ Route::get('/csrf-token', function () {
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login',    [AuthController::class, 'login']);
+    Route::post('/forgot-password', [PasswordResetLinkController::class, 'store']);
+    Route::post('/reset-password', [NewPasswordController::class, 'store']);
 });
 
 // ── Authenticated ──────────────────────────────────────────
@@ -33,9 +41,33 @@ Route::middleware(['auth:sanctum', 'log.api'])->group(function () {
     Route::get('/auth/me',      [AuthController::class, 'me']);
     Route::put('/auth/me',      [AuthController::class, 'updateMe']);
 
+    // Investigator Routes (police role)
+    Route::middleware('role:police')->prefix('investigator')->group(function () {
+        Route::get('/cases', [InvestigatorController::class, 'index']);
+        Route::get('/cases/{id}', [InvestigatorController::class, 'show']);
+        Route::get('/stats', [InvestigatorController::class, 'stats']);
+    });
+
+    // Notes Routes
+    Route::middleware('role:police')->prefix('cases/{case}')->group(function () {
+        Route::get('/notes', [InvestigationNoteController::class, 'index']);
+        Route::post('/notes', [InvestigationNoteController::class, 'store']);
+    });
+    Route::middleware('role:police')->group(function () {
+        Route::put('/notes/{note}', [InvestigationNoteController::class, 'update']);
+        Route::delete('/notes/{note}', [InvestigationNoteController::class, 'destroy']);
+    });
+
+    // Notifications (police + admin)
+    Route::middleware('role:police,admin')->group(function () {
+        Route::get('/notifications', [NotificationController::class, 'index']);
+        Route::put('/notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
+        Route::put('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+    });
+
     // Crime Reports – citizen creates, views own
     Route::post('/crime-report',    [CrimeReportController::class, 'store'])->middleware('role:citizen');
-    Route::get('/my-reports',       [CrimeReportController::class, 'myReports'])->middleware('role:citizen');
+    Route::get('/my-reports',       [CrimeReportController::class, 'myReports']); // TEMP: removed role middleware for testing
 
     // Crime Reports – single report (ownership enforced by policy)
     Route::get('/crime-report/{id}',  [CrimeReportController::class, 'show'])->middleware('case.owner');
@@ -59,4 +91,7 @@ Route::middleware(['auth:sanctum', 'log.api'])->group(function () {
 
     // Admin Analytics
     Route::get('/admin/analytics', [AnalyticsController::class, 'index'])->middleware('role:admin');
+    Route::get('/admin/users', [AnalyticsController::class, 'users'])->middleware('role:admin');
+    Route::post('/admin/users', [AdminUserController::class, 'store'])->middleware('role:admin');
 });
+

@@ -6,8 +6,10 @@ use App\Http\Requests\CrimeReportStoreRequest;
 use App\Http\Requests\CrimeReportUpdateRequest;
 use App\Http\Resources\CrimeReportResource;
 use App\Models\CrimeReport;
+use App\Models\User;
 use App\Services\CrimeReportService;
 use App\Services\EvidenceService;
+use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -16,6 +18,7 @@ class CrimeReportController extends Controller
 	public function __construct(
 		private CrimeReportService $reportService,
 		private EvidenceService $evidenceService,
+		private NotificationService $notificationService,
 	) {}
 
 	/**
@@ -30,10 +33,38 @@ class CrimeReportController extends Controller
 			$this->evidenceService->storeFiles($report, $request->file('evidence'), $request->user());
 		}
 
+		// Notify admins about new crime report
+		$this->notifyAdmins(
+			'New Crime Report',
+			"A new {$report->priority} priority report '{$report->title}' has been submitted.",
+			'new_report',
+			$report->id
+		);
+
 		return response()->json([
 			'message' => 'Crime report submitted successfully.',
 			'report' => new CrimeReportResource($report->load('evidenceFiles')),
 		], 201);
+	}
+
+	/**
+	 * Notify all admins about an event
+	 */
+	private function notifyAdmins(string $title, string $message, string $type, ?int $relatedId = null): void
+	{
+		$admins = User::whereHas('role', function ($query) {
+			$query->where('name', 'admin');
+		})->get();
+
+		foreach ($admins as $admin) {
+			$this->notificationService->create(
+				$admin->id,
+				$title,
+				$message,
+				$type,
+				$relatedId
+			);
+		}
 	}
 
 	/**
@@ -46,25 +77,17 @@ class CrimeReportController extends Controller
 		return response()->json(new CrimeReportResource($report));
 	}
 
-	/**
-	 * GET /my-reports - citizen's own reports
+		/**
+	 * GET /my-reports - citizen's own reports (guest → empty)
 	 */
 	public function myReports(Request $request): JsonResponse
 	{
-        // TEMP DEBUG - Remove after fix
-        $user = $request->user();
-        if ($user) {
-            \Log::info('myReports DEBUG', [
-                'user_id' => $user->id,
-                'email' => $user->email,
-                'role_id' => $user->role_id,
-                'role_name' => $user->role?->name,
-                'service_user_id' => $user->id
-            ]);
-            // dd($user->load('role')->toArray());  // UNCOMMENT for immediate dump
-        }
-		
-		$reports = $this->reportService->getForCitizen($request->user());
+		$user = $request->user();
+		if (!$user) {
+			return response()->json([], 200);
+		}
+
+		$reports = $this->reportService->getForCitizen($user);
 
 		return response()->json(CrimeReportResource::collection($reports));
 	}

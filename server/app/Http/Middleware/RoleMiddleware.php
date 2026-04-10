@@ -16,6 +16,11 @@ class RoleMiddleware
     {
         $user = $request->user();
         
+        // Always load the role relationship for API requests
+        if ($user && !$user->relationLoaded('role')) {
+            $user->load('role');
+        }
+        
         // DEBUG: Log role check failure
         if (!$user) {
             \Log::error('RoleMiddleware: No authenticated user');
