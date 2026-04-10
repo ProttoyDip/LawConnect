@@ -6,6 +6,7 @@ import Home from './views/Home';
 import Login from './pages/Auth/Login';
 import Register from './pages/Auth/Register';
 import ForgotPassword from './views/ForgotPassword';
+import ResetPassword from './views/ResetPassword';
 import Dashboard from './views/Dashboard';
 import AdminDashboard from './views/AdminDashboard';
 import ReportCrime from './views/ReportCrime';
@@ -13,11 +14,13 @@ import ReportList from './views/ReportList';
 import InvestigatorDashboard from './views/InvestigatorDashboard';
 
 import CaseDetails from './pages/Cases/CaseDetails';
+import CaseDetailsInvestigator from './pages/Cases/CaseDetailsInvestigator';
 import UserProfile from './pages/Profile/UserProfile';
 import NotFound from './pages/Errors/NotFound';
 import ServerError from './pages/Errors/ServerError';
 import Navbar from './components/Navbar';
 import ErrorBoundary from './components/ErrorBoundary';
+import { getRoleHomePath, isUserRole, type UserRole } from './utils/roles';
 import './index.css';
 import { Toaster } from 'react-hot-toast';
 
@@ -47,7 +50,7 @@ function ProtectedLayoutRoute() {
   );
 }
 
-function getStoredRole(): 'citizen' | 'police' | 'admin' | null {
+function getStoredRole(): UserRole | null {
   const rawUser = localStorage.getItem('user');
   if (!rawUser) {
     return null;
@@ -55,7 +58,7 @@ function getStoredRole(): 'citizen' | 'police' | 'admin' | null {
 
   try {
     const parsedUser = JSON.parse(rawUser) as { role?: string };
-    if (parsedUser.role === 'citizen' || parsedUser.role === 'police' || parsedUser.role === 'admin') {
+    if (isUserRole(parsedUser.role)) {
       return parsedUser.role;
     }
   } catch {
@@ -73,22 +76,18 @@ function DashboardEntryRoute() {
     return <Navigate to="/login" replace />;
   }
 
-  if (role === 'police') {
-    return <Navigate to="/police" replace />;
+  if (role === 'citizen') {
+    return <Dashboard />;
   }
 
-  if (role === 'admin') {
-    return <Navigate to="/admin" replace />;
-  }
-
-  return <Dashboard />;
+  return <Navigate to={getRoleHomePath(role)} replace />;
 }
 
 function RoleRoute({
   allowedRoles,
   children,
 }: {
-  allowedRoles: Array<'citizen' | 'police' | 'admin'>;
+  allowedRoles: UserRole[];
   children: ReactNode;
 }) {
   const token = localStorage.getItem('token');
@@ -99,7 +98,7 @@ function RoleRoute({
   }
 
   if (!allowedRoles.includes(role)) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to={getRoleHomePath(role)} replace />;
   }
 
   return children;
@@ -109,9 +108,9 @@ function App() {
   const location = useLocation();
 
   // Check if current route is a public page that needs navbar
-  const showNavbar = ['/', '/login', '/register', '/forgot-password'].includes(
-    location.pathname
-  );
+  const showNavbar =
+    ['/', '/login', '/register', '/forgot-password'].includes(location.pathname) ||
+    location.pathname.startsWith('/password-reset/');
 
   return (
     <ErrorBoundary>
@@ -126,6 +125,7 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/password-reset/:token" element={<ResetPassword />} />
 
             {/* Protected routes — require token */}
             <Route element={<ProtectedRoute />}>
@@ -133,7 +133,7 @@ function App() {
               <Route
                 path="/admin"
                 element={
-                  <RoleRoute allowedRoles={['admin']}>
+                  <RoleRoute allowedRoles={['admin', 'super_admin']}>
                     <AdminDashboard />
                   </RoleRoute>
                 }
@@ -141,8 +141,16 @@ function App() {
               <Route
                 path="/police"
                 element={
-                  <RoleRoute allowedRoles={['police']}>
+                  <RoleRoute allowedRoles={['police', 'officer', 'investigator']}>
                     <InvestigatorDashboard />
+                  </RoleRoute>
+                }
+              />
+              <Route
+                path="/police/cases/:caseId"
+                element={
+                  <RoleRoute allowedRoles={['police', 'officer', 'investigator']}>
+                    <CaseDetailsInvestigator />
                   </RoleRoute>
                 }
               />

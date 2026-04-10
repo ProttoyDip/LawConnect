@@ -9,10 +9,14 @@ import {
   LogOut,
   X,
   ChevronLeft,
-  ChevronRight 
+  ChevronRight,
+  ClipboardList,
+  Users,
+  BarChart3
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '../../utils/cn';
+import { getRoleHomePath, isAdminRole, isPoliceRole, type UserRole } from '../../utils/roles';
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -22,13 +26,23 @@ interface SidebarProps {
   onLogout?: () => void;
   user?: any;
   assignedCasesCount?: number;
+  role?: UserRole;
 }
 
-export default function Sidebar({ isCollapsed, onToggle, isMobileOpen, onCloseMobile, onLogout, user, assignedCasesCount }: SidebarProps) {
+export default function Sidebar({ isCollapsed, onToggle, isMobileOpen, onCloseMobile, onLogout, user, assignedCasesCount, role }: SidebarProps) {
   const location = useLocation();
   const showExpandedContent = !isCollapsed || isMobileOpen;
   
-  const navItems = [
+  // Role-based navigation items
+  const investigatorNavItems = [
+    { icon: LayoutDashboard, label: 'Dashboard', href: '/police', active: true },
+    { icon: ClipboardList, label: 'Assigned Cases', href: '/police?tab=assigned' },
+    { icon: Bell, label: 'Notifications', href: '/police?tab=notifications' },
+    { icon: User, label: 'Profile', href: '/police?tab=profile' },
+    { icon: Settings, label: 'Settings', href: '/police?tab=settings' },
+  ];
+
+  const citizenNavItems = [
     { icon: LayoutDashboard, label: 'Overview', href: '/dashboard', active: true },
     { icon: FileText, label: 'My Reports', href: '/dashboard?tab=reports' },
     { icon: Plus, label: 'Submit Report', href: '/dashboard?tab=submit' },
@@ -36,6 +50,20 @@ export default function Sidebar({ isCollapsed, onToggle, isMobileOpen, onCloseMo
     { icon: Bell, label: 'Notifications', href: '/dashboard?tab=notifications' },
     { icon: Settings, label: 'Settings', href: '/dashboard?tab=settings' },
   ];
+
+  const adminNavItems = [
+    { icon: LayoutDashboard, label: 'Dashboard', href: '/admin', active: true },
+    { icon: ClipboardList, label: 'Case Management', href: '/admin?tab=cases' },
+    { icon: Users, label: 'User Management', href: '/admin?tab=users' },
+    { icon: BarChart3, label: 'Analytics', href: '/admin?tab=analytics' },
+    { icon: Bell, label: 'Notifications', href: '/admin?tab=notifications' },
+    { icon: Settings, label: 'Settings', href: '/admin?tab=settings' },
+  ];
+
+  const navItems = isAdminRole(role) ? adminNavItems : isPoliceRole(role) ? investigatorNavItems : citizenNavItems;
+
+  // Get the base route prefix based on role
+  const routePrefix = getRoleHomePath(role);
 
   return (
     <>
@@ -56,11 +84,9 @@ export default function Sidebar({ isCollapsed, onToggle, isMobileOpen, onCloseMo
       <motion.aside
         initial={false}
         className={cn(
-          'fixed inset-y-0 left-0 z-50 w-72 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-r border-slate-200/80 dark:border-white/20 shadow-2xl flex flex-col overflow-hidden transition-transform duration-300',
-          'md:sticky md:top-0 md:z-auto md:h-screen',
-          isMobileOpen ? 'translate-x-0' : '-translate-x-full',
-          isCollapsed ? 'md:w-20' : 'md:w-72',
-          'md:translate-x-0'
+          'fixed md:fixed top-0 h-screen w-72 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-r border-slate-200/80 dark:border-white/20 shadow-2xl flex flex-col overflow-hidden transition-transform duration-300 z-50',
+          isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
+          isCollapsed ? 'md:w-20' : 'md:w-72'
         )}
       >
       {/* Header */}
@@ -113,8 +139,42 @@ export default function Sidebar({ isCollapsed, onToggle, isMobileOpen, onCloseMo
       <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const isActive = location.pathname === '/dashboard' && (location.search?.includes('tab=') ? 
-            location.search.includes(`tab=${item.label.toLowerCase().replace(' ', '')}`) : item.active);
+          
+          // Determine active state based on role and current route
+          const isActive = (() => {
+            const currentPath = location.pathname;
+            const currentSearch = location.search || '';
+            
+            // Check if we're on the correct base path for this role
+            if (!currentPath.startsWith(routePrefix)) return false;
+            
+            // For base route (no tab), check if this item is marked active
+            if (!currentSearch.includes('tab=')) {
+              return item.active;
+            }
+            
+            // Extract tab value from URL
+            const tabMatch = currentSearch.match(/tab=([^&]*)/);
+            const currentTab = tabMatch ? tabMatch[1] : '';
+            
+            // Map label to tab value
+            const labelToTab: Record<string, string> = {
+              'Dashboard': '',
+              'Overview': '',
+              'Assigned Cases': 'assigned',
+              'My Reports': 'reports',
+              'Submit Report': 'submit',
+              'Profile': 'profile',
+              'Notifications': 'notifications',
+              'Settings': 'settings',
+              'Analytics': 'analytics',
+            };
+            
+            const itemTab = labelToTab[item.label] || item.label.toLowerCase().replace(/ /g, '');
+            
+            // Check if the current tab matches this item's tab
+            return currentTab === itemTab;
+          })();
 
           return (
             <Link
@@ -162,8 +222,8 @@ export default function Sidebar({ isCollapsed, onToggle, isMobileOpen, onCloseMo
           }}
           className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white dark:hover:bg-white/20 transition-all duration-200 cursor-pointer group"
         >
-          <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-orange-500 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
-            <User className="w-5 h-5 text-slate-900 font-bold" />
+          <div className="w-10 h-10 bg-gradient-to-br from-rose-500 to-pink-600 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
+            <User className="w-5 h-5 text-white font-bold" />
           </div>
           <AnimatePresence>
             {showExpandedContent && (
@@ -173,7 +233,13 @@ export default function Sidebar({ isCollapsed, onToggle, isMobileOpen, onCloseMo
                 exit={{ opacity: 0, x: -20 }}
                 className="flex flex-col text-sm text-slate-600 dark:text-white/80 min-w-0"
               >
-                {user?.role === 'police' ? (
+                {isAdminRole(user?.role) ? (
+                  <>
+                    <span id="portal-role" className="font-medium truncate">{user?.name || 'Admin'}</span>
+                    <span className="text-xs opacity-75">Administrator</span>
+                    <span className="text-xs text-rose-600 dark:text-rose-400">🔒 Admin Access</span>
+                  </>
+                ) : isPoliceRole(user?.role) ? (
                   <>
                     <span id="portal-role" className="font-medium truncate">Investigator Workspace</span>
                     <span className="text-xs opacity-75">

@@ -1,10 +1,12 @@
+import type { UserRole } from '../utils/roles';
+
 // User Types
 export interface User {
   id: number;
   name: string;
   email: string;
   national_id?: string;
-  role: 'citizen' | 'police' | 'admin';
+  role: UserRole;
   phone?: string;
   address?: string;
   created_at?: string;
@@ -52,6 +54,29 @@ export interface CaseStatusUpdate {
   created_at: string;
 }
 
+// Investigation Note Types
+export interface InvestigationNote {
+  id: number;
+  crime_report_id: number;
+  user_id: number;
+  note: string;
+  user?: User;
+  created_at: string;
+  is_owner: boolean;
+}
+
+// Notification Types
+export interface Notification {
+  id: number;
+  user_id: number;
+  title: string;
+  message: string;
+  type: string;
+  related_id?: number;
+  read: boolean;
+  created_at: string;
+}
+
 // Police Assignment Types
 export interface PoliceAssignment {
   id: number;
@@ -83,7 +108,7 @@ export interface PaginatedResponse<T = any> {
 export interface LoginFormData {
   email: string;
   password: string;
-  role_type: 'citizen' | 'police' | 'admin';
+  role_type: UserRole;
   admin_id?: string;
   security_code?: string;
   badge_number?: string;
@@ -97,7 +122,7 @@ export interface RegisterFormData {
   national_id?: string;
   password: string;
   confirmPassword: string;
-  role: 'citizen' | 'police' | 'admin';
+  role: UserRole;
   phone?: string;
   address?: string;
 }

@@ -68,4 +68,10 @@ Card.Footer = ({
   </div>
 )
 
-export { Card }
+const CardContent = Card.Content
+const CardHeader = Card.Header
+const CardTitle = Card.Title
+const CardDescription = Card.Description
+const CardFooter = Card.Footer
+
+export { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }

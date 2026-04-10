@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import ApiClient, { User, CrimeReport, StatusUpdate } from '../api';
 import PageTransition from '../components/PageTransition';
 import { useTheme } from '../context/ThemeContext';
+import { cn } from '../utils/cn';
 
 import Sidebar from '../components/layout/Sidebar';
 import Header from '../components/layout/Header';
@@ -72,8 +73,9 @@ export default function InvestigatorDashboard() {
         const allReports = Array.isArray(allReportsRes) ? allReportsRes : allReportsRes.data || [];
         setAllCases(allReports);
 
-        const assigned = allReports.filter((report: CrimeReport & { police_assignment?: { police_id?: number } }) => {
-          return report.police_assignment?.police_id === user?.id || report.status === 'investigating';
+        const assigned = allReports.filter((report: CrimeReport & { police_assignment?: { officer_id?: number; police_id?: number } }) => {
+          const assignedOfficerId = report.police_assignment?.officer_id ?? report.police_assignment?.police_id;
+          return assignedOfficerId === user?.id || report.status === 'investigating';
         });
 
         setAssignedCases(assigned);
@@ -81,7 +83,7 @@ export default function InvestigatorDashboard() {
         setStats({
           totalAssigned: assigned.length,
           investigating: assigned.filter((report: CrimeReport) => report.status === 'investigating').length,
-          pendingReview: assigned.filter((report: CrimeReport) => report.status === 'pending_review').length,
+          pendingReview: assigned.filter((report: CrimeReport) => report.status === 'under_review').length,
           resolved: assigned.filter((report: CrimeReport) => report.status === 'resolved' || report.status === 'closed').length,
           recentUpdates: 5,
         });
@@ -116,18 +118,29 @@ export default function InvestigatorDashboard() {
   );
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
+    const fetchCurrentUser = async () => {
+      try {
+        const userData = await apiClient.getMe(true);
 
-    if (storedUser) {
-      const userData = JSON.parse(storedUser);
+        if (userData.role !== 'police') {
+          navigate('/dashboard');
+          return;
+        }
 
-      if (userData.role !== 'police') {
-        navigate('/dashboard');
-        return;
+        setUser(userData);
+        void fetchDashboardData(true);
+      } catch (error) {
+        // Token is invalid or expired
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        navigate('/login');
+        setInitialLoading(false);
       }
+    };
 
-      setUser(userData);
-      void fetchDashboardData(true);
+    const token = localStorage.getItem('token');
+    if (token) {
+      fetchCurrentUser();
     } else {
       navigate('/login');
       setInitialLoading(false);
@@ -318,7 +331,7 @@ export default function InvestigatorDashboard() {
       <div className="relative min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,rgba(120,119,198,0.15),transparent_50%)]" />
 
-        <div className="relative flex min-w-0 h-screen overflow-hidden">
+        <div className="relative flex min-w-0 h-screen overflow-hidden w-full">
           <Sidebar
             isCollapsed={isSidebarCollapsed}
             onToggle={toggleSidebar}
@@ -327,9 +340,16 @@ export default function InvestigatorDashboard() {
             onLogout={handleLogout}
             user={user}
             assignedCasesCount={assignedCases.length}
+            role="police"
           />
 
-          <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+          {/* Content - offset for fixed sidebar on desktop */}
+          <div
+            className={cn(
+              'flex min-w-0 flex-1 flex-col overflow-hidden transition-all duration-300',
+              isSidebarCollapsed ? 'md:ml-20' : 'md:ml-72'
+            )}
+          >
             <Header
               user={user}
               onLogout={handleLogout}

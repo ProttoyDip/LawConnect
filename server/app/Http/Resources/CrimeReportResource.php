@@ -8,6 +8,13 @@ class CrimeReportResource extends JsonResource
 {
 	public function toArray($request)
 	{
+		$latestAssignment = null;
+		if ($this->relationLoaded('policeAssignments')) {
+			$latestAssignment = $this->policeAssignments
+				->sortByDesc('assigned_at')
+				->first();
+		}
+
 		return [
 			'id' => $this->id,
 			'case_id' => $this->case_id,
@@ -28,6 +35,21 @@ class CrimeReportResource extends JsonResource
 			'updatedAt' => $this->updated_at?->toIso8601String(),
 			'status_updates' => StatusUpdateResource::collection($this->whenLoaded('statusUpdates')),
 			'statusUpdates' => StatusUpdateResource::collection($this->whenLoaded('statusUpdates')),
+			'police_assignment' => $latestAssignment ? [
+				'id' => $latestAssignment->id,
+				'officer_id' => $latestAssignment->officer_id,
+				'assigned_at' => optional($latestAssignment->assigned_at)?->toIso8601String(),
+			] : null,
+			'assigned_to' => $latestAssignment && $latestAssignment->relationLoaded('officer') && $latestAssignment->officer ? [
+				'id' => $latestAssignment->officer->id,
+				'name' => $latestAssignment->officer->name,
+				'email' => $latestAssignment->officer->email,
+			] : null,
+			'assignedTo' => $latestAssignment && $latestAssignment->relationLoaded('officer') && $latestAssignment->officer ? [
+				'id' => $latestAssignment->officer->id,
+				'name' => $latestAssignment->officer->name,
+				'email' => $latestAssignment->officer->email,
+			] : null,
 		];
 	}
 }

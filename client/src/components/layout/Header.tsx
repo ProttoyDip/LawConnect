@@ -1,23 +1,24 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Bell, 
-  ChevronDown, 
-  Moon, 
+import {
+  Bell,
+  ChevronDown,
+  Moon,
   Sun,
   Menu,
   User,
-  LogOut 
+  LogOut
 } from 'lucide-react';
+import type { User as ApiUser } from '../../api';
 
 interface HeaderProps {
-  user: any;
+  user?: ApiUser | null;
   onLogout: () => void;
   notificationsCount: number;
   isDarkMode: boolean;
   onToggleDarkMode: () => void;
   onOpenMobileMenu: () => void;
-  onOpenNotifications: () => void;
+  onOpenNotifications?: () => void;
 }
 
 export default function Header({ user, onLogout, notificationsCount, isDarkMode, onToggleDarkMode, onOpenMobileMenu, onOpenNotifications }: HeaderProps) {
@@ -29,7 +30,6 @@ export default function Header({ user, onLogout, notificationsCount, isDarkMode,
       animate={{ y: 0 }}
       className="bg-white/80 dark:bg-slate-900/70 backdrop-blur-xl border-b border-slate-200/80 dark:border-white/20 shadow-xl px-3 py-3 sm:px-4 md:px-6 md:py-4 flex items-center justify-between gap-2 sm:gap-4 relative z-30 overflow-visible transition-colors"
     >
-      {/* Left: Quick Actions */}
       <div className="flex min-w-0 items-center gap-2 sm:gap-3">
         <motion.button
           type="button"
@@ -51,9 +51,7 @@ export default function Header({ user, onLogout, notificationsCount, isDarkMode,
         </div>
       </div>
 
-      {/* Right: Actions */}
       <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
-        {/* Notifications */}
         <motion.button
           onClick={onOpenNotifications}
           whileHover={{ scale: 1.05 }}
@@ -74,7 +72,6 @@ export default function Header({ user, onLogout, notificationsCount, isDarkMode,
           )}
         </motion.button>
 
-        {/* Dark Mode Toggle */}
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
@@ -89,7 +86,6 @@ export default function Header({ user, onLogout, notificationsCount, isDarkMode,
           )}
         </motion.button>
 
-        {/* Profile Dropdown */}
         <div className="relative">
           <motion.button
             whileHover={{ scale: 1.05 }}
@@ -123,7 +119,6 @@ export default function Header({ user, onLogout, notificationsCount, isDarkMode,
                   className="w-full flex items-center gap-3 px-4 py-3 text-left text-slate-700 hover:bg-slate-100 transition-all duration-200 text-sm font-medium"
                   onClick={() => {
                     setShowProfileMenu(false);
-                    // Navigate to profile tab
                   }}
                 >
                   <User className="w-4 h-4" />
@@ -145,4 +140,3 @@ export default function Header({ user, onLogout, notificationsCount, isDarkMode,
     </motion.header>
   );
 }
-

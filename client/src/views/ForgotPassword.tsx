@@ -1,13 +1,36 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Mail, ArrowLeft, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { redirectAuthenticatedUser } from '../utils/authRedirect';
+import ApiClient from '../api';
+
+const apiClient = new ApiClient();
 
 export default function ForgotPassword() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+
+  // Redirect authenticated users away from forgot password page
+  useEffect(() => {
+    let isMounted = true;
+
+    const runRedirectCheck = async () => {
+      if (!isMounted) {
+        return;
+      }
+      await redirectAuthenticatedUser(navigate);
+    };
+
+    void runRedirectCheck();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,13 +47,16 @@ export default function ForgotPassword() {
     }
 
     setLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setLoading(false);
+
+    try {
+      await apiClient.forgotPassword(email);
       setEmailSent(true);
-      toast.success('Password reset instructions sent!');
-    }, 1500);
+      toast.success('Password reset instructions sent to your email.');
+    } catch {
+      // error already handled by ApiClient
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (emailSent) {
@@ -49,7 +75,7 @@ export default function ForgotPassword() {
             <div className="w-16 h-16 mx-auto rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
               <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
             </div>
-            
+
             <h2 className="mt-6 text-2xl font-bold text-slate-900 dark:text-white">
               Check Your Email
             </h2>
@@ -59,7 +85,7 @@ export default function ForgotPassword() {
             <p className="mt-1 font-medium text-navy-800 dark:text-navy-400">
               {email}
             </p>
-            
+
             <div className="mt-8 space-y-4">
               <Link
                 to="/login"

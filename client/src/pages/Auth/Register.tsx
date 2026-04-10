@@ -1,32 +1,42 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Eye, EyeOff, Mail, Lock, User, Shield, Users, Phone, MapPin } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, Shield, Phone, MapPin } from 'lucide-react';
 import ApiClient from '../../api';
 import toast from 'react-hot-toast';
+import { redirectAuthenticatedUser } from '../../utils/authRedirect';
 
 const apiClient = new ApiClient();
-
-const roleOptions = [
-  { id: 'citizen', label: 'Citizen', icon: Users, description: 'Report crimes and track cases' },
-  { id: 'police', label: 'Police', icon: Shield, description: 'Investigate and manage cases' },
-  { id: 'admin', label: 'Admin', icon: Shield, description: 'Full system access' },
-];
 
 export default function Register() {
   const navigate = useNavigate();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [nationalId, setNationalId] = useState('');
-  const [badgeNumber, setBadgeNumber] = useState('');
-  const [policeStation, setPoliceStation] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [role, setRole] = useState('citizen');
   const [loading, setLoading] = useState(false);
+
+  // Redirect authenticated users away from register page
+  useEffect(() => {
+    let isMounted = true;
+
+    const runRedirectCheck = async () => {
+      if (!isMounted) {
+        return;
+      }
+      await redirectAuthenticatedUser(navigate);
+    };
+
+    void runRedirectCheck();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,8 +46,7 @@ export default function Register() {
       !email ||
       !password ||
       !confirmPassword ||
-      (role === 'citizen' && !nationalId.trim()) ||
-      (role === 'police' && (!badgeNumber.trim() || !policeStation.trim()))
+      !nationalId.trim()
     ) {
       toast.error('Please fill in all required fields');
       return;
@@ -59,11 +68,9 @@ export default function Register() {
         password,
         confirmPassword,
         nationalId,
-        role,
+        'citizen',
         phone,
-        address,
-        badgeNumber,
-        policeStation
+        address
       );
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
@@ -105,30 +112,6 @@ export default function Register() {
             </p>
           </div>
 
-          {/* Role Selection */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
-              Select Your Role
-            </label>
-            <div className="grid grid-cols-3 gap-2">
-              {roleOptions.map((option) => (
-                <button
-                  key={option.id}
-                  type="button"
-                  onClick={() => setRole(option.id)}
-                  className={`flex flex-col items-center gap-1 p-3 rounded-lg border transition-all ${
-                    role === option.id
-                      ? 'border-navy-800 bg-navy-50 dark:bg-navy-900/20 text-navy-800 dark:text-navy-400'
-                      : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600'
-                  }`}
-                >
-                  <option.icon className="w-5 h-5" />
-                  <span className="text-xs font-medium">{option.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Name */}
             <div>
@@ -142,6 +125,7 @@ export default function Register() {
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                  autoComplete="name"
                   className="input-field pl-12 pr-4"
                   placeholder="John Doe"
                   required
@@ -161,6 +145,7 @@ export default function Register() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="email"
                   className="input-field pl-12 pr-4"
                   placeholder="you@example.com"
                   required
@@ -169,66 +154,25 @@ export default function Register() {
             </div>
 
             {/* National ID */}
-            {role === 'citizen' && (
-              <div>
-                <label htmlFor="nationalId" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  National ID *
-                </label>
-                <div className="relative">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
-                  <input
-                    id="nationalId"
-                    type="text"
-                    value={nationalId}
-                    onChange={(e) => setNationalId(e.target.value)}
-                    className="input-field pl-12 pr-4"
-                    placeholder="Enter your National ID"
-                    maxLength={20}
-                  />
-                </div>
+            <div>
+              <label htmlFor="nationalId" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                National ID *
+              </label>
+              <div className="relative">
+                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
+                <input
+                  id="nationalId"
+                  type="text"
+                  value={nationalId}
+                  onChange={(e) => setNationalId(e.target.value)}
+                  autoComplete="off"
+                  className="input-field pl-12 pr-4"
+                  placeholder="Enter your National ID"
+                  maxLength={20}
+                  required
+                />
               </div>
-            )}
-
-            {/* Police fields */}
-            {role === 'police' && (
-              <>
-                <div>
-                  <label htmlFor="badgeNumber" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                    Badge Number *
-                  </label>
-                  <div className="relative">
-                    <Shield className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
-                    <input
-                      id="badgeNumber"
-                      type="text"
-                      value={badgeNumber}
-                      onChange={(e) => setBadgeNumber(e.target.value)}
-                      className="input-field pl-12 pr-4"
-                      placeholder="Enter your badge number"
-                      maxLength={50}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="policeStation" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                    Police Station *
-                  </label>
-                  <div className="relative">
-                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
-                    <input
-                      id="policeStation"
-                      type="text"
-                      value={policeStation}
-                      onChange={(e) => setPoliceStation(e.target.value)}
-                      className="input-field pl-12 pr-4"
-                      placeholder="Enter your station"
-                      maxLength={255}
-                    />
-                  </div>
-                </div>
-              </>
-            )}
+            </div>
 
             {/* Phone */}
             <div>
@@ -242,6 +186,7 @@ export default function Register() {
                   type="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
+                  autoComplete="tel"
                   className="input-field pl-12 pr-4"
                   placeholder="+1 (555) 000-0000"
                 />
@@ -259,6 +204,7 @@ export default function Register() {
                   id="address"
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
+                  autoComplete="street-address"
                   rows={2}
                   className="input-field pl-12 pr-4 py-3 resize-none"
                   placeholder="Your address"
@@ -278,6 +224,7 @@ export default function Register() {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="new-password"
                   className="input-field pl-12 pr-12"
                   placeholder="••••••••"
                   required
@@ -306,6 +253,7 @@ export default function Register() {
                   type={showPassword ? 'text' : 'password'}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
+                  autoComplete="new-password"
                   className="input-field pl-12 pr-4"
                   placeholder="••••••••"
                   required

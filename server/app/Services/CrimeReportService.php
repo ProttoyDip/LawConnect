@@ -72,6 +72,62 @@ class CrimeReportService
     }
 
     /**
+     * Get investigator assigned cases with filters (investigator view).
+     */
+    public function getInvestigatorCases(int $investigatorId, array $filters = [], int $perPage = 15): LengthAwarePaginator
+    {
+        $query = CrimeReport::with(['user', 'policeAssignments.officer', 'statusUpdates', 'investigationNotes.user', 'evidenceFiles'])
+            ->where(function ($q) use ($investigatorId) {
+                $q->whereHas('policeAssignments', function ($pa) use ($investigatorId) {
+                    $pa->where('officer_id', $investigatorId);
+                })->orWhere('status', 'investigating');
+            });
+
+        if (!empty($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+        if (!empty($filters['priority'])) {
+            $query->where('priority', $filters['priority']);
+        }
+        if (!empty($filters['search'])) {
+            $query->where(function ($q) use ($filters) {
+                $q->where('title', 'LIKE', "%{$filters['search']}%")
+                  ->orWhere('case_id', 'LIKE', "%{$filters['search']}%")
+                  ->orWhere('location', 'LIKE', "%{$filters['search']}%");
+            });
+        }
+
+        return $query->latest()->paginate($perPage);
+    }
+
+    /**
+     * Get investigator stats.
+     */
+    public function getInvestigatorStats(int $investigatorId): array
+    {
+        return [
+            'total_assigned' => CrimeReport::whereHas('policeAssignments', function ($q) use ($investigatorId) {
+                $q->where('officer_id', $investigatorId);
+            })->count(),
+            'investigating' => CrimeReport::where('status', 'investigating')
+                ->whereHas('policeAssignments', function ($q) use ($investigatorId) {
+                    $q->where('officer_id', $investigatorId);
+                })
+                ->count(),
+            'pending_review' => CrimeReport::where('status', 'under_review')
+                ->whereHas('policeAssignments', function ($q) use ($investigatorId) {
+                    $q->where('officer_id', $investigatorId);
+                })
+                ->count(),
+            'resolved' => CrimeReport::whereIn('status', ['resolved', 'closed'])
+                ->whereHas('policeAssignments', function ($q) use ($investigatorId) {
+                    $q->where('officer_id', $investigatorId);
+                })
+                ->count(),
+        ];
+    }
+
+    /**
      * Get a single report by ID with all relations.
      */
     public function findOrFail(int $id): CrimeReport
@@ -81,6 +137,8 @@ class CrimeReportService
             'evidenceFiles',
             'policeAssignments.officer',
             'statusUpdates.creator',
+            'investigationNotes.user',
         ])->findOrFail($id);
     }
 }
+

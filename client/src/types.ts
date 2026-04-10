@@ -1,9 +1,11 @@
+import type { UserRole } from './utils/roles';
+
 // User types
 export interface User {
   id: number;
   name: string;
   email: string;
-  role: 'admin' | 'police' | 'citizen';
+  role: UserRole;
   national_id?: string;
   badge_number?: string;
   police_station?: string;
@@ -72,7 +74,7 @@ export interface ApiResponse<T> {
 export interface LoginFormData {
   email: string;
   password: string;
-  role_type: string;
+  role_type: UserRole;
   national_id?: string;
   badge_number?: string;
   admin_id?: string;
@@ -88,7 +90,7 @@ export interface RegisterFormData {
   national_id?: string;
   badge_number?: string;
   police_station?: string;
-  role_type?: string;
+  role_type?: UserRole;
 }
 
 export interface ReportFormData {

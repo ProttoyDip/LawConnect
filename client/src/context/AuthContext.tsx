@@ -33,6 +33,7 @@ const logout = async () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     localStorage.removeItem('readNotifications');
+    window.location.href = '/';
   };
 
   const isAuthenticated = !!localStorage.getItem('token');

@@ -7,6 +7,7 @@ use App\Http\Requests\RegisterRequest;
 use App\Http\Resources\UserResource;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -14,21 +15,25 @@ use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
+    public function __construct(
+        private NotificationService $notificationService
+    ) {}
+
     /**
      * POST /auth/register
      */
     public function register(RegisterRequest $request): JsonResponse
     {
-        // Get the role - default to citizen if not specified
-        $roleName = $request->input('role', Role::CITIZEN);
+        // Public signup is citizen-only.
+        $roleName = Role::CITIZEN;
         $role = Role::firstOrCreate(['name' => $roleName]);
 
-$user = User::create([
+        $user = User::create([
             'name'     => $request->name,
             'email'    => $request->email,
             'national_id' => $request->national_id,
-            'badge_number' => $request->badge_number,
-            'police_station' => $request->police_station,
+            'badge_number' => null,
+            'police_station' => null,
             'password' => Hash::make($request->password),
             'role_id'  => $role->id,
             'phone'    => $request->phone,
@@ -36,6 +41,14 @@ $user = User::create([
         ]);
 
         $token = $user->createToken('auth-token')->plainTextToken;
+
+        // Notify admin about new user registration
+        $this->notifyAdmins(
+            'New User Registration',
+            "A new {$roleName} user '{$user->name}' has registered.",
+            'new_user',
+            $user->id
+        );
 
         return response()->json([
             'message' => 'Registration successful.',
@@ -45,54 +58,35 @@ $user = User::create([
     }
 
     /**
+     * Notify all admins about an event
+     */
+    private function notifyAdmins(string $title, string $message, string $type, ?int $relatedId = null): void
+    {
+        $admins = User::whereHas('role', function ($query) {
+            $query->where('name', 'admin');
+        })->get();
+
+        foreach ($admins as $admin) {
+            $this->notificationService->create(
+                $admin->id,
+                $title,
+                $message,
+                $type,
+                $relatedId
+            );
+        }
+    }
+
+    /**
      * POST /auth/login
      */
     public function login(LoginRequest $request): JsonResponse
     {
-        $roleType = $request->input('role_type');
-
-        // Map frontend role_type to backend role names
-        $roleMap = [
-            'general' => 'citizen',
-            'investigator' => 'police',
-            'admin' => 'admin',
-        ];
-
-        $expectedRole = $roleMap[$roleType] ?? null;
-
-        // Role-specific field requirements
-        if ($roleType && $expectedRole) {
-            if ($expectedRole === 'admin') {
-                if (!$request->filled('admin_id') || !$request->filled('security_code')) {
-                    return response()->json([
-                        'message' => 'Admin credentials required'
-                    ], 401);
-                }
-            } elseif ($expectedRole === 'police') {
-                if (!$request->filled('badge_number') || !$request->filled('police_station')) {
-                    return response()->json([
-                        'message' => 'Badge number and police station are required'
-                    ], 401);
-                }
-            }
-        } elseif ($roleType && !$expectedRole) {
-            return response()->json(['message' => 'Invalid role type'], 400);
-        }
-
-        // Standard email/password auth
         if (!Auth::attempt($request->only('email', 'password'))) {
             return response()->json(['message' => 'Invalid credentials.'], 401);
         }
 
         $user = Auth::user()->load('role');
-
-        // Validate role match
-        if ($expectedRole && $user->role->name !== $expectedRole) {
-            Auth::logout();
-            return response()->json([
-                'message' => 'Role credentials do not match'
-            ], 401);
-        }
 
         $token = $user->createToken('auth-token')->plainTextToken;
 
@@ -110,6 +104,13 @@ $user = User::create([
     {
         try {
             $request->user()?->tokens()->delete(); // Revoke all tokens
+            // Default guard for API requests may be Sanctum's RequestGuard (no logout method).
+            // Use the session-capable web guard explicitly when ending browser sessions.
+            Auth::guard('web')->logout();
+            if ($request->hasSession()) {
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+            }
             return response()->json([
                 'message' => 'Logged out successfully'
             ], 200);

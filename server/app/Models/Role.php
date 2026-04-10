@@ -14,7 +14,10 @@ class Role extends Model
     /* ---- Constants ---- */
     const CITIZEN = 'citizen';
     const POLICE  = 'police';
+    const INVESTIGATOR = 'investigator';
+    const OFFICER = 'officer';
     const ADMIN   = 'admin';
+    const SUPER_ADMIN = 'super_admin';
 
     /* ---- Relationships ---- */
 

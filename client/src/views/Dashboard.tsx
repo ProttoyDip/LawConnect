@@ -93,16 +93,27 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    
-    if (storedUser) {
-      const userData = JSON.parse(storedUser);
-      setUser(userData);
-      if (userData.role !== 'citizen') {
-        navigate('/dashboard');
-        return;
+    const fetchCurrentUser = async () => {
+      try {
+        const userData = await apiClient.getMe(true);
+        setUser(userData);
+        if (userData.role !== 'citizen') {
+          navigate('/dashboard');
+          return;
+        }
+        fetchDashboardData(true);
+      } catch (error) {
+        // Token is invalid or expired
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        navigate('/login');
+        setInitialLoading(false);
       }
-      fetchDashboardData(true);
+    };
+
+    const token = localStorage.getItem('token');
+    if (token) {
+      fetchCurrentUser();
     } else {
       navigate('/login');
       setInitialLoading(false);
@@ -189,7 +200,7 @@ export default function Dashboard() {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     toast.success('Logged out successfully');
-    navigate('/login');
+    navigate('/');
   }, [navigate]);
 
     const handleMarkNotificationAsRead = (notificationId: number) => {
@@ -239,6 +250,8 @@ export default function Dashboard() {
         return <ProfileSettings user={user} />;
       case 'notifications':
           return <Notifications notifications={notifications} onMarkAsRead={handleMarkNotificationAsRead} />;
+      case 'settings':
+        return <ProfileSettings user={user} />;
       default:
         return <EmptyState 
           title="Welcome to LawConnect" 
@@ -252,17 +265,22 @@ export default function Dashboard() {
     <PageTransition>
       <div className="relative min-h-screen overflow-x-hidden bg-slate-50 dark:bg-slate-900 transition-colors">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(99,102,241,0.12),transparent_55%)] dark:bg-[radial-gradient(circle_at_top_right,rgba(99,102,241,0.22),transparent_55%)]" />
-        <div className="relative flex min-w-0">
-          {/* Sidebar */}
+        <div className="relative flex min-w-0 w-full">
+          {/* Sidebar - fixed, overlaps content on desktop */}
           <Sidebar 
             isCollapsed={isSidebarCollapsed}
             onToggle={toggleSidebar}
             isMobileOpen={isMobileSidebarOpen}
             onCloseMobile={closeMobileSidebar}
             onLogout={handleLogout}
+            role="citizen"
           />
-          
-          <div className="flex min-w-0 flex-1 flex-col overflow-x-hidden">
+           
+          {/* Content - offset for fixed sidebar on desktop */}
+          <div className={cn(
+            'flex min-w-0 flex-1 flex-col overflow-x-hidden transition-all duration-300',
+            isSidebarCollapsed ? 'md:ml-20' : 'md:ml-72'
+          )}>
             {/* Header */}
             <Header 
               user={user}

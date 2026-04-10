@@ -12,12 +12,10 @@ class RegisterRequest extends FormRequest {
         return [
             'name'    => 'required|string|max:255',
             'email'   => 'required|email|unique:users,email',
-            'national_id' => 'required_if:role,citizen|nullable|string|max:20|unique:users,national_id',
-            'badge_number' => 'required_if:role,police|nullable|string|max:50|unique:users,badge_number',
-            'police_station' => 'required_if:role,police|nullable|string|max:255',
+            'national_id' => 'required|string|max:20|unique:users,national_id',
             'password' => 'required|min:8|confirmed',
             'password_confirmation' => 'required',
-            'role'    => 'nullable|in:citizen,police,admin',
+            'role'    => 'sometimes|in:citizen',
             'phone'   => 'nullable|string',
             'address' => 'nullable|string',
         ];
@@ -27,10 +25,7 @@ class RegisterRequest extends FormRequest {
         return [
             'email.unique' => 'This email already exists',
             'national_id.unique' => 'This National ID is already registered',
-            'national_id.required_if' => 'National ID is required for citizens',
-            'badge_number.required_if' => 'Badge number is required for police',
-            'badge_number.unique' => 'This badge number is already registered',
-            'police_station.required_if' => 'Police station is required for police',
+            'national_id.required' => 'National ID is required',
             'password.confirmed' => 'Passwords do not match',
         ];
     }
