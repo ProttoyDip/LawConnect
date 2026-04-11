@@ -98,10 +98,9 @@ class ApiClient {
         'Content-Type': 'application/json',
         Accept: 'application/json',
       },
-      withCredentials: true,
     });
 
-    // Attach token and CSRF token on every request
+    // Attach bearer token on every request.
     this.client.interceptors.request.use(async (config) => {
       const token = localStorage.getItem('token');
       if (token) {

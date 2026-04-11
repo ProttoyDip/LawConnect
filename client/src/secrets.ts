@@ -6,9 +6,13 @@ function normalizeEndpoint(value: string) {
 function getDefaultBackendEndpoint() {
   const isViteDevServer = import.meta.env.DEV && typeof window !== 'undefined' && window.location.port === '5173';
 
-  // Use the Vite proxy only when the app is actually running on the dev server.
-  // In other local or packaged runtimes, fall back to the Laravel backend directly.
-  return isViteDevServer ? '' : 'http://127.0.0.1:8000';
+  if (isViteDevServer) {
+    // Use Vite proxy in local dev.
+    return '';
+  }
+
+  // Safety fallback for production builds when hosting env vars are missing.
+  return 'https://lawconnect-zccz.onrender.com';
 }
 
 export const secrets = {

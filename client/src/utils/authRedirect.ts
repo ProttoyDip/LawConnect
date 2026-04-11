@@ -1,8 +1,12 @@
-import axios from 'axios';
 import type { NavigateFunction } from 'react-router-dom';
-import { secrets } from '../secrets';
-import type { User } from '../api';
+import ApiClient, { type User } from '../api';
 import { getRoleHomePath } from './roles';
+
+const apiClient = new ApiClient();
+let redirectCheckPromise: Promise<boolean> | null = null;
+let lastValidatedToken: string | null = null;
+let lastValidatedAt = 0;
+const REDIRECT_CHECK_TTL_MS = 15000;
 
 function clearStaleAuth() {
   localStorage.removeItem('token');
@@ -30,17 +34,36 @@ export async function redirectAuthenticatedUser(navigate: NavigateFunction): Pro
   }
 
   try {
-    const response = await axios.get<User>(`${secrets.backendEndpoint || ''}/api/auth/me`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      withCredentials: true,
-    });
+    const now = Date.now();
+    if (
+      lastValidatedToken === token &&
+      now - lastValidatedAt < REDIRECT_CHECK_TTL_MS &&
+      localStorage.getItem('user')
+    ) {
+      const cachedUser = JSON.parse(localStorage.getItem('user') as string) as User;
+      navigate(getRoleHomePath(cachedUser.role), { replace: true });
+      return true;
+    }
 
-    const user = response.data;
-    localStorage.setItem('user', JSON.stringify(user));
-    navigate(getRoleHomePath(user.role), { replace: true });
-    return true;
+    if (!redirectCheckPromise) {
+      redirectCheckPromise = apiClient
+        .getMe()
+        .then((user) => {
+          localStorage.setItem('user', JSON.stringify(user));
+          lastValidatedToken = token;
+          lastValidatedAt = Date.now();
+          return user;
+        })
+        .finally(() => {
+          redirectCheckPromise = null;
+        })
+        .then((user) => {
+          navigate(getRoleHomePath(user.role), { replace: true });
+          return true;
+        });
+    }
+
+    return await redirectCheckPromise;
   } catch {
     clearStaleAuth();
     return false;
