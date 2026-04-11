@@ -15,12 +15,14 @@ return [
     |
     */
 
-    'paths' => ['*'],
+    'paths' => ['api/*', 'sanctum/csrf-cookie', '*'],
 
     'allowed_methods' => ['*'],
 
     'allowed_origins' => [
         env('FRONTEND_URL', 'http://localhost:5173'),
+        'https://law-connect-bd.vercel.app',
+        'https://lawconnect-zccz.onrender.com',
         'http://localhost:5173',
         'http://localhost:5174',
         'http://localhost:5175',
@@ -29,15 +31,14 @@ return [
         'http://127.0.0.1:5173',
         'http://127.0.0.1:5174',
         'http://127.0.0.1:5175',
-        'https://lawconnect-zccz.onrender.com',
         'http://127.0.0.1:5176',
         'http://127.0.0.1:5177',
     ],
 
-        '#^https://.*\.vercel\.app$#',
-        '#^https://.*\.onrender\.com$#',
     'allowed_origins_patterns' => [
         '#^https?://(localhost|127\\.0\\.0\\.1):517[0-9]$#',
+        '#^https://.*\\.vercel\\.app$#',
+        '#^https://.*\\.onrender\\.com$#',
     ],
 
     'allowed_headers' => ['*'],
