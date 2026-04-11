@@ -34,7 +34,6 @@ export async function redirectAuthenticatedUser(navigate: NavigateFunction): Pro
       headers: {
         Authorization: `Bearer ${token}`,
       },
-      withCredentials: true,
     });
 
     const user = response.data;
