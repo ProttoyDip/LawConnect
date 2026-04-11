@@ -8,6 +8,18 @@ dotenv.config();
 const app = express();
 const port = Number(process.env.PORT || 3000);
 
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
+
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204);
+  }
+
+  return next();
+});
+
 app.use(express.json());
 
 app.get('/health', (req, res) => {
@@ -17,7 +29,22 @@ app.get('/health', (req, res) => {
   });
 });
 
+app.get('/api/health', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'Node API is healthy',
+  });
+});
+
 app.use('/api', userRoutes);
+
+app.all('/api/auth/*', (req, res) => {
+  res.status(501).json({
+    success: false,
+    message:
+      'Auth endpoints are not implemented in this Node service. Deploy the Laravel server as the backend for /api/auth/* routes.',
+  });
+});
 
 app.use((req, res) => {
   res.status(404).json({
