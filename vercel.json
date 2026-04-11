@@ -4,10 +4,6 @@
   "outputDirectory": "client/dist",
   "rewrites": [
     {
-      "source": "/favicon.ico",
-      "destination": "/vite.svg"
-    },
-    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
