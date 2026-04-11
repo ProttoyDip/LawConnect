@@ -1,6 +1,7 @@
 const express = require('express');
 const dotenv = require('dotenv');
 const { checkDatabaseConnection, configSource, database } = require('./config/db');
+const { ensureFixedSuperAdminAccount } = require('./controllers/user.controller');
 const userRoutes = require('./routes/user.routes');
 
 dotenv.config();
@@ -66,6 +67,7 @@ app.use((error, req, res, next) => {
 async function startServer() {
   try {
     await checkDatabaseConnection();
+    await ensureFixedSuperAdminAccount();
     console.log(`DB config source: ${configSource} (${database})`);
 
     app.listen(port, () => {
