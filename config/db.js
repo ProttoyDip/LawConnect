@@ -65,7 +65,8 @@ const database = firstDefined(
   process.env.DB_DATABASE,
   process.env.MYSQLDATABASE,
   process.env.MYSQL_DATABASE,
-  connectionUrlConfig.database
+  connectionUrlConfig.database,
+  'railway'
 );
 const requiresSsl = String(
   firstDefined(process.env.DB_SSL, process.env.MYSQL_SSL, connectionUrlConfig.ssl, 'false')
