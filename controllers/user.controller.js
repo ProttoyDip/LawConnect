@@ -124,6 +124,154 @@ async function getMyReports(req, res) {
   return res.status(200).json([]);
 }
 
+async function getCrimeReports(req, res) {
+  return res.status(200).json({
+    data: [],
+  });
+}
+
+async function getAdminAnalytics(req, res) {
+  const [rows] = await pool.execute('SELECT COUNT(*) AS total_users FROM users');
+
+  return res.status(200).json({
+    total_reports: 0,
+    pending_reports: 0,
+    investigating: 0,
+    resolved_reports: 0,
+    closed_reports: 0,
+    total_users: Number(rows[0]?.total_users || 0),
+    total_officers: 0,
+    by_category: {},
+    by_priority: {},
+    recent_reports: [],
+  });
+}
+
+async function getAdminUsers(req, res) {
+  const [rows] = await pool.execute('SELECT id, name, email FROM users ORDER BY id DESC');
+
+  return res.status(200).json({
+    users: rows.map((user) => ({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: DEFAULT_ROLE,
+    })),
+    active_user_ids: [],
+  });
+}
+
+async function createAdminUser(req, res, next) {
+  try {
+    const { name, email, role } = req.body;
+
+    if (!name || !email) {
+      return res.status(400).json({
+        message: 'name and email are required',
+      });
+    }
+
+    const tempPassword = await bcrypt.hash('temporary-password-123', 12);
+    const [result] = await pool.execute('INSERT INTO users (name, email, password) VALUES (?, ?, ?)', [
+      name,
+      email,
+      tempPassword,
+    ]);
+
+    const createdUser = {
+      id: result.insertId,
+      name,
+      email,
+      role: role || DEFAULT_ROLE,
+    };
+
+    return res.status(201).json({
+      message: 'User created successfully.',
+      user: {
+        data: createdUser,
+      },
+      mail_sent: false,
+    });
+  } catch (error) {
+    if (error && error.code === 'ER_DUP_ENTRY') {
+      return res.status(409).json({
+        message: 'Email already exists',
+      });
+    }
+
+    return next(error);
+  }
+}
+
+async function deleteAdminUser(req, res, next) {
+  try {
+    const userId = Number(req.params.user || req.params.userId);
+
+    if (!Number.isFinite(userId)) {
+      return res.status(400).json({
+        message: 'Invalid user id',
+      });
+    }
+
+    const [result] = await pool.execute('DELETE FROM users WHERE id = ?', [userId]);
+
+    return res.status(200).json({
+      message: 'User deleted successfully.',
+      deleted: result.affectedRows > 0,
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+async function getOfficers(req, res) {
+  return res.status(200).json([]);
+}
+
+async function getNotifications(req, res) {
+  return res.status(200).json({
+    data: [],
+    unread_count: 0,
+  });
+}
+
+async function markNotificationRead(req, res) {
+  return res.status(200).json({
+    message: 'Notification marked as read.',
+  });
+}
+
+async function markAllNotificationsRead(req, res) {
+  return res.status(200).json({
+    message: 'All notifications marked as read.',
+  });
+}
+
+async function getInvestigatorStats(req, res) {
+  return res.status(200).json({
+    total_cases: 0,
+    investigating: 0,
+    resolved: 0,
+    pending: 0,
+  });
+}
+
+async function getInvestigatorCases(req, res) {
+  return res.status(200).json({
+    data: [],
+    total: 0,
+    per_page: 15,
+    current_page: 1,
+    last_page: 1,
+  });
+}
+
+async function getInvestigatorCase(req, res) {
+  return res.status(404).json({
+    message: 'Case not found',
+  });
+}
+
 async function registerUser(req, res, next) {
   try {
     const { name, email, password } = req.body;
@@ -230,6 +378,18 @@ module.exports = {
   getCurrentUser,
   logoutUser,
   getMyReports,
+  getCrimeReports,
+  getAdminAnalytics,
+  getAdminUsers,
+  createAdminUser,
+  deleteAdminUser,
+  getOfficers,
+  getNotifications,
+  markNotificationRead,
+  markAllNotificationsRead,
+  getInvestigatorStats,
+  getInvestigatorCases,
+  getInvestigatorCase,
   registerUser,
   getUsers,
 };
