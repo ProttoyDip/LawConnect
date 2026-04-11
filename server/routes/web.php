@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\DashboardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -75,11 +76,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 // Auth scaffolding (login/register pages)
 require __DIR__ . '/auth.php';
 
-// SPA fallback route - serves React app for all frontend routes
-// Uncomment if serving React build from Laravel public folder
-// Route::get('/{any}', function () {
-//     return file_get_contents(public_path('index.html'));
-// })->where('any', '.*');
+// SPA fallback - serves React build from public/build/index.html for client routes
+Route::get('/{any}', function () {
+    return file_get_contents(public_path('build/index.html'));
+})->where('any', '.*')->middleware('auth', 'verified');
 
 // Note: Auth routes (login, register, password reset) have been moved to API-only
 // The React frontend handles all authentication via /api/auth/* endpoints

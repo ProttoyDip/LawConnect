@@ -4,94 +4,131 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\CrimeReportStoreRequest;
 use App\Http\Requests\CrimeReportUpdateRequest;
+use App\Http\Resources\CrimeReportResource;
 use App\Models\CrimeReport;
+use App\Models\User;
 use App\Services\CrimeReportService;
 use App\Services\EvidenceService;
+use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class CrimeReportController extends Controller
 {
-    public function __construct(
-        private CrimeReportService $reportService,
-        private EvidenceService $evidenceService,
-    ) {}
+	public function __construct(
+		private CrimeReportService $reportService,
+		private EvidenceService $evidenceService,
+		private NotificationService $notificationService,
+	) {}
 
-    /**
-     * POST /crime-report  – citizen creates a report
-     */
-    public function store(CrimeReportStoreRequest $request): JsonResponse
-    {
-        $report = $this->reportService->create($request->user(), $request->validated());
+	/**
+	 * POST /crime-report - citizen creates a report
+	 */
+	public function store(CrimeReportStoreRequest $request): JsonResponse
+	{
+		$report = $this->reportService->create($request->user(), $request->validated());
 
-        // Handle evidence uploads if provided
-        if ($request->hasFile('evidence')) {
-            $this->evidenceService->storeFiles($report, $request->file('evidence'), $request->user());
-        }
+		// Handle evidence uploads if provided
+		if ($request->hasFile('evidence')) {
+			$this->evidenceService->storeFiles($report, $request->file('evidence'), $request->user());
+		}
 
-        return response()->json([
-            'message' => 'Crime report submitted successfully.',
-            'report'  => $report->load('evidenceFiles'),
-        ], 201);
-    }
+		// Notify admins about new crime report
+		$this->notifyAdmins(
+			'New Crime Report',
+			"A new {$report->priority} priority report '{$report->title}' has been submitted.",
+			'new_report',
+			$report->id
+		);
 
-    /**
-     * GET /crime-report/{id}  – view a single report
-     */
-    public function show(int $id): JsonResponse
-    {
-        $report = $this->reportService->findOrFail($id);
+		return response()->json([
+			'message' => 'Crime report submitted successfully.',
+			'report' => new CrimeReportResource($report->load('evidenceFiles')),
+		], 201);
+	}
 
-        return response()->json($report);
-    }
+	/**
+	 * Notify all admins about an event
+	 */
+	private function notifyAdmins(string $title, string $message, string $type, ?int $relatedId = null): void
+	{
+		$admins = User::whereHas('role', function ($query) {
+			$query->where('name', 'admin');
+		})->get();
 
-    /**
-     * GET /my-reports  – citizen's own reports
-     */
-    public function myReports(Request $request): JsonResponse
-    {
-        $reports = $this->reportService->getForCitizen($request->user());
+		foreach ($admins as $admin) {
+			$this->notificationService->create(
+				$admin->id,
+				$title,
+				$message,
+				$type,
+				$relatedId
+			);
+		}
+	}
 
-        return response()->json($reports);
-    }
+	/**
+	 * GET /crime-report/{id} - view a single report
+	 */
+	public function show(int $id): JsonResponse
+	{
+		$report = $this->reportService->findOrFail($id);
 
-    /**
-     * GET /crime-reports  – all reports (police/admin)
-     */
-    public function index(Request $request): JsonResponse
-    {
-        $filters = $request->only(['status', 'category', 'priority', 'search']);
-        $reports = $this->reportService->getAll($filters);
+		return response()->json(new CrimeReportResource($report));
+	}
 
-        return response()->json($reports);
-    }
+		/**
+	 * GET /my-reports - citizen's own reports (guest → empty)
+	 */
+	public function myReports(Request $request): JsonResponse
+	{
+		$user = $request->user();
+		if (!$user) {
+			return response()->json([], 200);
+		}
 
-    /**
-     * PUT /crime-report/{id}  – citizen updates own pending report
-     */
-    public function update(CrimeReportUpdateRequest $request, int $id): JsonResponse
-    {
-        $report = CrimeReport::findOrFail($id);
-        $this->authorize('update', $report);
+		$reports = $this->reportService->getForCitizen($user);
 
-        $updated = $this->reportService->update($report, $request->validated());
+		return response()->json(CrimeReportResource::collection($reports));
+	}
 
-        return response()->json([
-            'message' => 'Report updated.',
-            'report'  => $updated,
-        ]);
-    }
+	/**
+	 * GET /crime-reports - all reports (police/admin)
+	 */
+	public function index(Request $request): JsonResponse
+	{
+		$filters = $request->only(['status', 'category', 'priority', 'search']);
+		$reports = $this->reportService->getAll($filters);
 
-    /**
-     * DELETE /crime-report/{id}  – admin only
-     */
-    public function destroy(int $id): JsonResponse
-    {
-        $report = CrimeReport::findOrFail($id);
-        $this->authorize('delete', $report);
+		return response()->json(CrimeReportResource::collection($reports));
+	}
 
-        $report->delete();
+	/**
+	 * PUT /crime-report/{id} - citizen updates own pending report
+	 */
+	public function update(CrimeReportUpdateRequest $request, int $id): JsonResponse
+	{
+		$report = CrimeReport::findOrFail($id);
+		$this->authorize('update', $report);
 
-        return response()->json(['message' => 'Report deleted.']);
-    }
+		$updated = $this->reportService->update($report, $request->validated());
+
+		return response()->json([
+			'message' => 'Report updated.',
+			'report' => new CrimeReportResource($updated),
+		]);
+	}
+
+	/**
+	 * DELETE /crime-report/{id} - admin only
+	 */
+	public function destroy(int $id): JsonResponse
+	{
+		$report = CrimeReport::findOrFail($id);
+		$this->authorize('delete', $report);
+
+		$report->delete();
+
+		return response()->json(['message' => 'Report deleted.']);
+	}
 }

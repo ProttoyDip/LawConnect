@@ -1,55 +1,27 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Row, Col, Spinner, Tab, Tabs } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 
+import ApiClient, { User, CrimeReport, StatusUpdate } from '../api';
 import PageTransition from '../components/PageTransition';
-import ApiClient, { User, CrimeReport } from '../api';
+import { useTheme } from '../context/ThemeContext';
+import { cn } from '../utils/cn';
 
-// Common Components
-import ProfileHeader from '../components/Dashboard/common/ProfileHeader';
+// New layout & common
+import Sidebar from '../components/layout/Sidebar';
+import Header from '../components/layout/Header';
+import OverviewStats from '../components/Dashboard/common/OverviewStats';
+import EmptyState from '../components/ui/EmptyState';
+import { Button } from '../components/ui/Button';
 
-// Admin Components
-import OverviewCards from '../components/Dashboard/Admin/OverviewCards';
-import UserManagement from '../components/Dashboard/Admin/UserManagement';
-import CaseManagement from '../components/Dashboard/Admin/CaseManagement';
-import ReportsSection from '../components/Dashboard/Admin/ReportsSection';
-
-// Investigator Components
-import AssignedCases from '../components/Dashboard/Investigator/AssignedCases';
-import CaseUpdateModal from '../components/Dashboard/Investigator/CaseUpdateModal';
-import PerformanceStats from '../components/Dashboard/Investigator/PerformanceStats';
-import ActivityTimeline from '../components/Dashboard/Investigator/ActivityTimeline';
-
-// Citizen Components
+// Citizen Components (will be enhanced later)
 import MyReports from '../components/Dashboard/Citizen/MyReports';
 import SubmitReport from '../components/Dashboard/Citizen/SubmitReport';
 import ProfileSettings from '../components/Dashboard/Citizen/ProfileSettings';
 import Notifications from '../components/Dashboard/Citizen/Notifications';
 
 const apiClient = new ApiClient();
-
-interface AnalyticsData {
-  total_reports: number;
-  pending_reports: number;
-  investigating: number;
-  resolved_reports: number;
-  total_users: number;
-  total_officers: number;
-  closed_reports: number;
-  by_category: Record<string, number>;
-  by_priority: Record<string, number>;
-  recent_reports: CrimeReport[];
-}
-
-interface ActivityItem {
-  id: number;
-  action: string;
-  caseTitle?: string;
-  timestamp: string;
-  type: 'status' | 'note' | 'evidence' | 'assignment';
-}
 
 interface NotificationItem {
   id: number;
@@ -60,286 +32,290 @@ interface NotificationItem {
   read: boolean;
 }
 
+interface CitizenStats {
+  totalReports: number;
+  pending: number;
+  resolved: number;
+  recentActivity: number;
+}
+
 export default function Dashboard() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { theme, toggleTheme } = useTheme();
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   
   const [myReports, setMyReports] = useState<CrimeReport[]>([]);
-  const [allReports, setAllReports] = useState<CrimeReport[]>([]);
-  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
-  const [investigators, setInvestigators] = useState<User[]>([]);
-  
-  const [selectedCase, setSelectedCase] = useState<CrimeReport | null>(null);
-  const [showCaseModal, setShowCaseModal] = useState(false);
-  
-  const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [stats, setStats] = useState<CitizenStats>({
+    totalReports: 0,
+    pending: 0,
+    resolved: 0,
+    recentActivity: 0
+  });
 
-  useEffect(() => {
-    const stored = localStorage.getItem('user');
-    if (stored) {
-      const userData = JSON.parse(stored);
-      setUser(userData);
-      fetchData(userData.role);
-    } else {
-      navigate('/login');
-    }
-  }, [navigate]);
+  // Tab state from URL
+  const currentTab = searchParams.get('tab') || 'overview';
 
-  const fetchData = async (role: string) => {
-    setLoading(true);
-    try {
-      if (role === 'citizen') {
-        const reports = await apiClient.getMyReports();
-        setMyReports(reports);
-      } else if (role === 'police') {
-        const reports = await apiClient.getAllReports();
-        setAllReports(reports);
-        setActivities([
-          { id: 1, action: 'Case status updated', caseTitle: 'Theft Report', timestamp: new Date().toISOString(), type: 'status' },
-          { id: 2, action: 'Evidence uploaded', caseTitle: 'Fraud Investigation', timestamp: new Date(Date.now() - 86400000).toISOString(), type: 'evidence' },
-          { id: 3, action: 'New case assigned', caseTitle: 'Vandalism Case', timestamp: new Date(Date.now() - 172800000).toISOString(), type: 'assignment' },
-        ]);
-      } else if (role === 'admin') {
-        const [analyticsData, reportsData] = await Promise.all([
-          apiClient.getAdminAnalytics(),
-          apiClient.getAllReports(),
-        ]);
-        setAnalytics(analyticsData);
-        setAllReports(reportsData);
-        setInvestigators([
-          { id: 2, name: 'John Investigator', email: 'john@lawconnect.com', role: 'police' },
-          { id: 3, name: 'Jane Smith', email: 'jane@lawconnect.com', role: 'police' },
-        ]);
-      }
-    } catch (error) {
-      console.error('Error fetching data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleLogout = useCallback(async () => {
-    try {
-      await apiClient.logout();
-    } catch {
-      // Clear even if API fails
-    }
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    toast.success('Logged out successfully');
-    navigate('/login');
-  }, [navigate]);
-
-  const handleReportSubmit = async (data: { title: string; description: string; category: string; location: string; priority: string; files: FileList | null }) => {
+  const handleReportSubmit = async (data: {
+    title: string;
+    description: string;
+    category: string;
+    location: string;
+    priority: string;
+    occurredAt?: string;
+    files: File[];
+  }) => {
     const formData = new FormData();
     formData.append('title', data.title);
     formData.append('category', data.category);
     formData.append('description', data.description);
     formData.append('location', data.location);
     formData.append('priority', data.priority);
+    if (data.occurredAt) {
+      formData.append('occurred_at', data.occurredAt);
+    }
+    data.files.forEach((file) => {
+      formData.append('evidence[]', file);
+    });
     
     try {
       await apiClient.createCrimeReport(formData);
       toast.success('Report submitted successfully');
-      const reports = await apiClient.getMyReports();
-      setMyReports(reports);
+      fetchDashboardData();
     } catch (error) {
       console.error('Error submitting report:', error);
+      throw error;
     }
   };
 
-  const handleCaseUpdate = async (caseId: number, status: string, remarks?: string) => {
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const userData = await apiClient.getMe(true);
+        setUser(userData);
+        if (userData.role !== 'citizen') {
+          navigate('/dashboard');
+          return;
+        }
+        fetchDashboardData(true);
+      } catch (error) {
+        // Token is invalid or expired
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        navigate('/login');
+        setInitialLoading(false);
+      }
+    };
+
+    const token = localStorage.getItem('token');
+    if (token) {
+      fetchCurrentUser();
+    } else {
+      navigate('/login');
+      setInitialLoading(false);
+    }
+  }, [navigate]);
+
+  // Real-time polling
+  useEffect(() => {
+    const interval = setInterval(fetchDashboardData, 30000); // 30s
+    return () => clearInterval(interval);
+  }, []);
+
+  const fetchDashboardData = async (showInitialLoader = false) => {
+    if (showInitialLoader) {
+      setInitialLoading(true);
+    }
+
     try {
-      await apiClient.updateReportStatus(caseId, status, remarks);
-      toast.success('Case updated successfully');
-      const reports = await apiClient.getAllReports();
-      setAllReports(reports);
+      const reportsRes = await apiClient.getMyReports();
+      const reports = Array.isArray(reportsRes) ? reportsRes : reportsRes.data || [];
+      setMyReports(reports);
+
+        // Generate notifications from status updates
+        const generatedNotifications: NotificationItem[] = [];
+        const readNotifications = JSON.parse(localStorage.getItem('readNotifications') || '[]');
+
+        reports.forEach((report: CrimeReport) => {
+          const updates = report.status_updates || report.statusUpdates || [];
+          if (updates.length > 0) {
+            updates.forEach((update: StatusUpdate) => {
+              const timestamp = update.created_at || update.createdAt || new Date().toISOString();
+              generatedNotifications.push({
+                id: update.id,
+                title: `Report "${report.title}" – Status Changed`,
+                message: update.notes || update.remarks || `Status: ${report.status.replace(/_/g, ' ')}`,
+                type: 'status',
+                timestamp,
+                read: readNotifications.includes(update.id),
+              });
+            });
+          }
+        });
+
+        generatedNotifications.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+        // Add a welcome notification if user has no updates
+        if (generatedNotifications.length === 0) {
+          generatedNotifications.push({
+            id: 0,
+            title: 'Welcome to LawConnect',
+            message: 'Submit your first crime report to get started',
+            type: 'update',
+            timestamp: new Date().toISOString(),
+            read: false,
+          });
+        }
+
+        setNotifications(generatedNotifications);
+      // Mock stats
+      setStats({
+        totalReports: reports.length,
+        pending: reports.filter((r: CrimeReport) => r.status === 'pending').length,
+        resolved: reports.filter((r: CrimeReport) => r.status === 'resolved' || r.status === 'closed').length,
+        recentActivity: 3
+      });
     } catch (error) {
-      console.error('Error updating case:', error);
+      console.error('Dashboard data error:', error);
+      if ((error as any)?.response?.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        navigate('/login');
+      }
+    } finally {
+      if (showInitialLoader) {
+        setInitialLoading(false);
+      }
     }
   };
 
-  if (!user || loading) {
+  const handleLogout = useCallback(async () => {
+    try {
+      await apiClient.logout();
+    } catch {}
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    toast.success('Logged out successfully');
+    navigate('/');
+  }, [navigate]);
+
+    const handleMarkNotificationAsRead = (notificationId: number) => {
+      const readNotifications = JSON.parse(localStorage.getItem('readNotifications') || '[]');
+      if (!readNotifications.includes(notificationId)) {
+        readNotifications.push(notificationId);
+        localStorage.setItem('readNotifications', JSON.stringify(readNotifications));
+      }
+      setNotifications(prev =>
+        prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
+      );
+    };
+
+  const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
+  const openMobileSidebar = () => setIsMobileSidebarOpen(true);
+  const closeMobileSidebar = () => setIsMobileSidebarOpen(false);
+
+  const updateTab = (tab: string) => {
+    setSearchParams({ tab });
+  };
+
+  if (initialLoading || !user) {
     return (
-      <div className="text-center py-5">
-        <Spinner animation="border" />
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors flex items-center justify-center p-8">
+        <motion.div 
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+          className="w-16 h-16 border-4 border-slate-300 dark:border-white/20 border-t-slate-700 dark:border-t-white rounded-full"
+        />
       </div>
     );
   }
 
-  // Admin Dashboard
-  if (user.role === 'admin') {
-    return (
-      <PageTransition>
-        <div className="dashboard-container">
-          <ProfileHeader user={user} onLogout={handleLogout} />
-          
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="dashboard-content"
-          >
-            <div className="dashboard-section">
-              <h3 className="section-title">Overview</h3>
-              {analytics && <OverviewCards analytics={analytics} />}
-            </div>
-
-            <div className="dashboard-section">
-              <h3 className="section-title">Case Management</h3>
-              <CaseManagement
-                cases={allReports}
-                investigators={investigators}
-                onAssignInvestigator={(caseId: number, investigatorId: number) => {
-                  toast.success(`Case assigned to investigator #${investigatorId}`);
-                  handleCaseUpdate(caseId, 'investigating');
-                }}
-                onUpdateStatus={handleCaseUpdate}
-              />
-            </div>
-
-            <div className="dashboard-section">
-              <h3 className="section-title">User Management</h3>
-              <UserManagement
-                users={analytics?.recent_reports?.map((r: CrimeReport) => r.user).filter(Boolean) as User[] || []}
-              />
-            </div>
-
-            <div className="dashboard-section">
-              <h3 className="section-title">Reports</h3>
-              {analytics && <ReportsSection analytics={analytics} />}
-            </div>
+  const renderTabContent = () => {
+    switch (currentTab) {
+      case 'overview':
+        return (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}>
+            <OverviewStats stats={stats} />
           </motion.div>
-        </div>
-      </PageTransition>
-    );
-  }
+        );
+      case 'reports':
+        return <MyReports reports={myReports} />;
+      case 'submit':
+        return <SubmitReport onSubmit={handleReportSubmit} onViewReports={() => updateTab('reports')} />;
+      case 'profile':
+        return <ProfileSettings user={user} />;
+      case 'notifications':
+          return <Notifications notifications={notifications} onMarkAsRead={handleMarkNotificationAsRead} />;
+      case 'settings':
+        return <ProfileSettings user={user} />;
+      default:
+        return <EmptyState 
+          title="Welcome to LawConnect" 
+          description="Your secure citizen portal for reporting and tracking cases. Get started by submitting a report or viewing your dashboard overview."
+          action={<Button variant="primary" onClick={() => updateTab('submit')}>Submit Report</Button>}
+        />;
+    }
+  };
 
-  // Investigator Dashboard
-  if (user.role === 'police') {
-    const assignedCases = allReports;
-    const completedCases = assignedCases.filter((c: CrimeReport) => c.status === 'resolved' || c.status === 'closed').length;
-    const ongoingCases = assignedCases.filter((c: CrimeReport) => c.status === 'investigating').length;
-
-    return (
-      <PageTransition>
-        <div className="dashboard-container">
-          <ProfileHeader user={user} onLogout={handleLogout} />
-          
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="dashboard-content"
-          >
-            <div className="dashboard-section">
-              <h3 className="section-title">Performance Stats</h3>
-              <PerformanceStats
-                stats={{
-                  totalAssigned: assignedCases.length,
-                  completed: completedCases,
-                  ongoing: ongoingCases,
-                }}
-              />
-            </div>
-
-            <Row className="g-4">
-              <Col lg={8}>
-                <div className="dashboard-section">
-                  <h3 className="section-title">Assigned Cases</h3>
-                  <AssignedCases
-                    cases={assignedCases}
-                    onCaseClick={(c: CrimeReport) => {
-                      setSelectedCase(c);
-                      setShowCaseModal(true);
-                    }}
-                  />
-                </div>
-              </Col>
-              <Col lg={4}>
-                <div className="dashboard-section">
-                  <h3 className="section-title">Activity</h3>
-                  <ActivityTimeline activities={activities} />
-                </div>
-              </Col>
-            </Row>
-          </motion.div>
-
-          <CaseUpdateModal
-            show={showCaseModal}
-            onHide={() => setShowCaseModal(false)}
-            caseItem={selectedCase}
-            onUpdateStatus={handleCaseUpdate}
-          />
-        </div>
-      </PageTransition>
-    );
-  }
-
-  // Citizen Dashboard
   return (
     <PageTransition>
-      <div className="dashboard-container">
-        <ProfileHeader user={user} onLogout={handleLogout} />
-        
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          className="dashboard-content"
-        >
-          <Tabs defaultActiveKey="reports" className="dashboard-tabs mb-4">
-            <Tab eventKey="reports" title="My Reports">
-              <Row className="g-4">
-                <Col lg={6}>
-                  <MyReports
-                    reports={myReports}
-                    onViewDetails={(report: CrimeReport) => {
-                      toast.success(`Viewing report: ${report.title}`);
-                    }}
-                  />
-                </Col>
-                <Col lg={6}>
-                  <SubmitReport onSubmit={handleReportSubmit} />
-                </Col>
-              </Row>
-            </Tab>
-            
-            <Tab eventKey="submit" title="Submit Report">
-              <Row className="justify-content-center">
-                <Col lg={8}>
-                  <SubmitReport onSubmit={handleReportSubmit} />
-                </Col>
-              </Row>
-            </Tab>
-            
-            <Tab eventKey="settings" title="Profile Settings">
-              <Row className="justify-content-center">
-                <Col lg={8}>
-                  <ProfileSettings user={user} />
-                </Col>
-              </Row>
-            </Tab>
-            
-            <Tab eventKey="notifications" title="Notifications">
-              <Row className="justify-content-center">
-                <Col lg={8}>
-                  <Notifications
-                    notifications={notifications}
-                    onMarkAsRead={(id: number) => {
-                      setNotifications((prev: NotificationItem[]) => 
-                        prev.map((n: NotificationItem) => n.id === id ? { ...n, read: true } : n)
-                      );
-                    }}
-                  />
-                </Col>
-              </Row>
-            </Tab>
-          </Tabs>
-        </motion.div>
+      <div className="relative min-h-screen overflow-x-hidden bg-slate-50 dark:bg-slate-900 transition-colors">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(99,102,241,0.12),transparent_55%)] dark:bg-[radial-gradient(circle_at_top_right,rgba(99,102,241,0.22),transparent_55%)]" />
+        <div className="relative flex min-w-0 w-full">
+          {/* Sidebar - fixed, overlaps content on desktop */}
+          <Sidebar 
+            isCollapsed={isSidebarCollapsed}
+            onToggle={toggleSidebar}
+            isMobileOpen={isMobileSidebarOpen}
+            onCloseMobile={closeMobileSidebar}
+            onLogout={handleLogout}
+            role="citizen"
+          />
+           
+          {/* Content - offset for fixed sidebar on desktop */}
+          <div className={cn(
+            'flex min-w-0 flex-1 flex-col overflow-x-hidden transition-all duration-300',
+            isSidebarCollapsed ? 'md:ml-20' : 'md:ml-72'
+          )}>
+            {/* Header */}
+            <Header 
+              user={user}
+              onLogout={handleLogout}
+              notificationsCount={notifications.filter(n => !n.read).length}
+              isDarkMode={theme === 'dark'}
+              onToggleDarkMode={toggleTheme}
+              onOpenMobileMenu={openMobileSidebar}
+              onOpenNotifications={() => updateTab('notifications')}
+            />
+
+            {/* Main Content */}
+            <main
+              onClick={() => {
+                if (isMobileSidebarOpen) {
+                  closeMobileSidebar();
+                }
+              }}
+              className={cn('flex-1 p-4 sm:p-6 lg:p-8', currentTab === 'submit' ? 'overflow-hidden' : 'overflow-y-auto')}
+            >
+              <motion.div
+                key={currentTab}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                {renderTabContent()}
+              </motion.div>
+            </main>
+          </div>
+        </div>
       </div>
     </PageTransition>
   );
 }
+
+

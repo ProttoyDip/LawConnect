@@ -1,19 +1,25 @@
-import { useState } from 'react';
-import { Button, Table, Modal, Form, Badge } from 'react-bootstrap';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useMemo } from 'react';
+import { Button } from '../../ui/Button';
+import { Badge } from '../../ui/Badge';
+import { Modal } from '../../ui/Modal';
+import { Table, TableHeader, TableHead, TableBody, TableCell, TableRow } from '../../ui/Table';
+import { FormGroup, FormLabel, FormSelect } from '../../ui/Form';
+import { AnimatePresence } from 'framer-motion';
 import GlassCard from '../common/GlassCard';
-import { CrimeReport, User } from '../../../api';
+import type { CrimeReport, User } from '../../../api';
 import toast from 'react-hot-toast';
+import { Search, Filter, ClipboardList } from 'lucide-react';
 
 interface CaseManagementProps {
   cases: CrimeReport[];
   investigators: User[];
-  onAssignInvestigator?: (caseId: number, investigatorId: number) => void;
-  onUpdateStatus?: (caseId: number, status: string) => void;
+  onAssignInvestigator?: (caseId: number, investigatorId: number) => Promise<void> | void;
+  onUpdateStatus?: (caseId: number, status: string) => Promise<void> | void;
 }
 
 const statusColors: Record<string, string> = {
   pending: 'warning',
+  under_review: 'info',
   investigating: 'info',
   resolved: 'success',
   closed: 'secondary',
@@ -27,15 +33,37 @@ export default function CaseManagement({
 }: CaseManagementProps) {
   const [showModal, setShowModal] = useState(false);
   const [selectedCase, setSelectedCase] = useState<CrimeReport | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [priorityFilter, setPriorityFilter] = useState('all');
+
+  const filteredCases = useMemo(() => {
+    return cases.filter((c) => {
+      const matchesSearch = 
+        c.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        String(c.id).includes(searchTerm);
+      const matchesStatus = statusFilter === 'all' || c.status === statusFilter;
+      const matchesPriority = priorityFilter === 'all' || c.priority === priorityFilter;
+      return matchesSearch && matchesStatus && matchesPriority;
+    });
+  }, [cases, searchTerm, statusFilter, priorityFilter]);
 
   const handleAssign = (caseItem: CrimeReport) => {
     setSelectedCase(caseItem);
     setShowModal(true);
   };
 
-  const handleStatusChange = (caseId: number, status: string) => {
-    onUpdateStatus?.(caseId, status);
-    toast.success('Case status updated');
+  const handleStatusChange = async (caseId: number, status: string) => {
+    if (!onUpdateStatus) {
+      return;
+    }
+
+    try {
+      await onUpdateStatus(caseId, status);
+      toast.success('Case status updated');
+    } catch {
+      toast.error('Failed to update case status');
+    }
   };
 
   const getPriorityBadge = (priority: string) => {
@@ -45,105 +73,186 @@ export default function CaseManagement({
       high: 'danger',
       critical: 'dark',
     };
-    return <Badge bg={colors[priority] || 'secondary'} className="text-uppercase">{priority}</Badge>;
+    return <Badge variant={colors[priority] || 'secondary'} className="uppercase">{priority}</Badge>;
   };
 
   return (
     <GlassCard>
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h4 className="mb-0">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16" className="me-2">
-            <path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"/>
-            <path d="M10.5 8.5a.5.5 0 0 1-1 0V5.707l-4.146 4.147a.5.5 0 0 1-.708-.708L8.793 5H6.5a.5.5 0 0 1 0-1h4a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V8.5z"/>
-          </svg>
-          Case Management
-        </h4>
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
+            <ClipboardList className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h4 className="mb-0 font-semibold text-lg">Case Management</h4>
+            <p className="text-sm text-slate-500 mb-0">{filteredCases.length} of {cases.length} cases</p>
+          </div>
+        </div>
       </div>
 
-      <div className="table-responsive">
-        <Table hover className="mb-0">
-          <thead>
-            <tr>
-              <th>Case ID</th>
-              <th>Title</th>
-              <th>Priority</th>
-              <th>Status</th>
-              <th>Assigned To</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <AnimatePresence>
-              {cases.map((caseItem: CrimeReport, index: number) => (
-                <motion.tr
-                  key={caseItem.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                >
-                  <td className="text-muted font-monospace">#{String(caseItem.id).substring(0, 8)}</td>
-                  <td className="fw-medium">{caseItem.title}</td>
-                  <td>{getPriorityBadge(caseItem.priority)}</td>
-                  <td>
-                    <Badge bg={statusColors[caseItem.status] || 'secondary'}>
-                      {caseItem.status?.replace('_', ' ')}
-                    </Badge>
-                  </td>
-                  <td>{(caseItem as any).assignedTo?.name || 'Unassigned'}</td>
-                  <td>
-                    <Button
-                      variant="outline-primary"
-                      size="sm"
-                      className="me-2"
-                      onClick={() => handleAssign(caseItem)}
-                    >
-                      Assign
-                    </Button>
-                    <Form.Select
-                      size="sm"
-                      value={caseItem.status}
-                      onChange={(e) => handleStatusChange(caseItem.id, e.target.value)}
-                      style={{ width: 'auto', display: 'inline-block' }}
-                    >
-                      <option value="pending">Pending</option>
-                      <option value="investigating">Investigating</option>
-                      <option value="resolved">Resolved</option>
-                      <option value="closed">Closed</option>
-                    </Form.Select>
-                  </td>
-                </motion.tr>
-              ))}
-            </AnimatePresence>
-          </tbody>
+      {/* Search and Filter Bar */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-6 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+        {/* Search Input */}
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search by title or ID..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all"
+          />
+        </div>
+        
+        {/* Status Filter */}
+        <div className="flex items-center gap-2">
+          <Filter className="w-4 h-4 text-slate-400" />
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-3 py-2.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+          >
+            <option value="all">All Status</option>
+            <option value="pending">Pending</option>
+            <option value="under_review">Under Review</option>
+            <option value="investigating">Investigating</option>
+            <option value="resolved">Resolved</option>
+            <option value="closed">Closed</option>
+          </select>
+        </div>
+
+        {/* Priority Filter */}
+        <select
+          value={priorityFilter}
+          onChange={(e) => setPriorityFilter(e.target.value)}
+          className="px-3 py-2.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+        >
+          <option value="all">All Priority</option>
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+          <option value="critical">Critical</option>
+        </select>
+
+        {/* Clear Filters */}
+        {(searchTerm || statusFilter !== 'all' || priorityFilter !== 'all') && (
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => {
+              setSearchTerm('');
+              setStatusFilter('all');
+              setPriorityFilter('all');
+            }}
+          >
+            Clear
+          </Button>
+        )}
+      </div>
+
+      {/* Table */}
+      <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
+        <Table className="mb-0"> 
+          <TableHeader>
+            <TableRow className="bg-slate-50 dark:bg-slate-800">
+              <TableHead>Case ID</TableHead>
+              <TableHead>Title</TableHead>
+              <TableHead>Priority</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Assigned To</TableHead>
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredCases.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="h-24 text-center text-slate-500">
+                  No cases match your filters
+                </TableCell>
+              </TableRow>
+            ) : (
+              <AnimatePresence>
+                {filteredCases.map((caseItem: CrimeReport, index: number) => (
+                  <TableRow
+                    key={caseItem.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                  >
+                    <TableCell className="text-slate-500 font-mono text-sm">#{String(caseItem.id).padStart(8, '0')}</TableCell>
+                    <TableCell className="font-medium">{caseItem.title}</TableCell>
+                    <TableCell>{getPriorityBadge(caseItem.priority)}</TableCell>
+                    <TableCell>
+                      <Badge variant={statusColors[caseItem.status] || 'secondary'}>
+                        {caseItem.status?.replace('_', ' ')}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {(caseItem as any).assignedTo?.name ||
+                        (caseItem as any).assigned_to?.name ||
+                        (caseItem as any).police_assignment?.officer?.name || (
+                        <span className="text-slate-400">Unassigned</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2 items-center">
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => handleAssign(caseItem)}
+                        >
+                          Assign
+                        </Button>
+                        <FormSelect
+                          value={caseItem.status || ''}
+                          onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+                            void handleStatusChange(caseItem.id!, e.target.value);
+                          }}
+                          className="py-1 px-2 text-sm bg-white dark:bg-slate-700"
+                          style={{ minWidth: '120px' }}
+                        >
+                          <option value="pending">Pending</option>
+                          <option value="under_review">Under Review</option>
+                          <option value="investigating">Investigating</option>
+                          <option value="resolved">Resolved</option>
+                          <option value="closed">Closed</option>
+                        </FormSelect>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </AnimatePresence>
+            )}
+          </TableBody>
         </Table>
       </div>
 
-      <Modal show={showModal} onHide={() => setShowModal(false)} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>Assign Investigator</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <p>Select an investigator for case: <strong>{selectedCase?.title}</strong></p>
-          <Form>
-            <Form.Group>
-              <Form.Label>Investigator</Form.Label>
-              <Form.Select
-                onChange={(e) => {
-                  if (selectedCase && e.target.value) {
-                    onAssignInvestigator?.(selectedCase.id, parseInt(e.target.value));
-                    toast.success('Investigator assigned');
-                    setShowModal(false);
-                  }
-                }}
-              >
-                <option value="">Select Investigator...</option>
-                {investigators.map((inv) => (
-                  <option key={inv.id} value={inv.id}>{inv.name} ({inv.email})</option>
-                ))}
-              </Form.Select>
-            </Form.Group>
-          </Form>
-        </Modal.Body>
+      {/* Assign Modal */}
+      <Modal show={showModal} onHide={() => setShowModal(false)} title="Assign Investigator">
+        <p>Select an investigator for case: <strong>{selectedCase?.title}</strong></p>
+        <FormGroup>
+          <FormLabel>Investigator</FormLabel>
+          <FormSelect
+            onChange={async (e: React.ChangeEvent<HTMLSelectElement>) => {
+              if (selectedCase && e.target.value) {
+                try {
+                  await onAssignInvestigator?.(selectedCase.id!, parseInt(e.target.value, 10));
+                  toast.success('Investigator assigned');
+                  setShowModal(false);
+                } catch {
+                  toast.error('Failed to assign investigator');
+                }
+              }
+            }}
+          >
+            <option value="">Select Investigator...</option>
+            {investigators.map((inv) => (
+              <option key={inv.id} value={inv.id}>{inv.name} ({inv.email})</option>
+            ))}
+          </FormSelect>
+        </FormGroup>
       </Modal>
     </GlassCard>
   );

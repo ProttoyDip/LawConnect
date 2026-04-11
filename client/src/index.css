@@ -113,8 +113,14 @@
 
 /* Dark Gradient Background */
 body {
-  background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #134e4a 100%);
+  background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 50%, #ecfeff 100%);
   min-height: 100vh;
+  color: #0f172a;
+}
+
+html.dark body {
+  background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #134e4a 100%);
+  color: #e2e8f0;
 }
 
 /* Profile Header Styles */
@@ -231,17 +237,28 @@ body {
 
 /* Glass Card Styles */
 .glass-card {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.72);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(148, 163, 184, 0.3);
   border-radius: 16px;
   padding: 24px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 8px 32px rgba(15, 23, 42, 0.12);
   transition: all 0.3s ease;
 }
 
 .glass-card-hover:hover {
+  background: rgba(255, 255, 255, 0.88);
+  border-color: rgba(99, 102, 241, 0.35);
+}
+
+.dark .glass-card {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.dark .glass-card-hover:hover {
   background: rgba(255, 255, 255, 0.1);
   border-color: rgba(255, 255, 255, 0.2);
 }
@@ -249,11 +266,11 @@ body {
 /* Stats Card Styles */
 .stats-card {
   position: relative;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.74);
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(148, 163, 184, 0.3);
   border-radius: 16px;
-  padding: 20px;
+  padding: 16px;
   display: flex;
   align-items: center;
   gap: 16px;
@@ -262,8 +279,18 @@ body {
 }
 
 .stats-card:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.9);
   transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(15, 23, 42, 0.2);
+}
+
+.dark .stats-card {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dark .stats-card:hover {
+  background: rgba(255, 255, 255, 0.1);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
 }
 
@@ -310,14 +337,22 @@ body {
 .stats-card-value {
   font-size: 2rem;
   font-weight: 700;
-  color: #ffffff;
+  color: #0f172a;
   line-height: 1;
 }
 
 .stats-card-title {
   font-size: 0.875rem;
-  color: #94a3b8;
+  color: #475569;
   margin-top: 4px;
+}
+
+.dark .stats-card-value {
+  color: #ffffff;
+}
+
+.dark .stats-card-title {
+  color: #94a3b8;
 }
 
 .stats-card-glow {
@@ -613,43 +648,121 @@ body {
   }
 }
 
+@media (max-width: 480px) {
+  .dashboard-container {
+    padding: 12px;
+  }
+
+  .profile-header-glass,
+  .glass-card {
+    padding: 12px;
+  }
+
+  .stats-card {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .stats-card-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .stats-card-value {
+    font-size: 1.25rem;
+  }
+}
+
 /* Form Controls for Dark Theme */
 .glass-card .form-control,
 .glass-card .form-select {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  color: #e2e8f0;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  color: #0f172a;
   border-radius: 10px;
   padding: 12px 16px;
 }
 
 .glass-card .form-control:focus,
 .glass-card .form-select:focus {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.9);
   border-color: #ffa726;
   box-shadow: 0 0 0 3px rgba(255, 167, 38, 0.2);
-  color: #ffffff;
+  color: #0f172a;
 }
 
 .glass-card .form-control::placeholder {
-  color: #64748b;
+  color: #475569;
 }
 
 .glass-card .form-label {
-  color: #e2e8f0;
+  color: #1e293b;
   font-weight: 500;
   margin-bottom: 8px;
 }
 
-/* Table Styles for Glass Cards */
-.glass-card .table {
+.dark .glass-card .form-control,
+.dark .glass-card .form-select {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   color: #e2e8f0;
 }
 
+.dark .glass-card .form-control:focus,
+.dark .glass-card .form-select:focus {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.dark .glass-card .form-control::placeholder {
+  color: #64748b;
+}
+
+.dark .glass-card .form-label {
+  color: #e2e8f0;
+}
+
+.glass-card .form-select.glass-select {
+  background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.82), rgba(224, 242, 254, 0.6));
+  border: 1px solid rgba(129, 140, 248, 0.35);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.glass-card .form-select.glass-select:focus {
+  background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(199, 210, 254, 0.68));
+}
+
+.dark .glass-card .form-select.glass-select {
+  background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.16), rgba(129, 140, 248, 0.15));
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.dark .glass-card .form-select.glass-select:focus {
+  background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(129, 140, 248, 0.2));
+}
+
+.glass-card .form-select option {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.dark .glass-card .form-select option {
+  background: #1e293b;
+  color: #e2e8f0;
+}
+
+/* Table Styles for Glass Cards */
+.glass-card .table {
+  color: #0f172a;
+}
+
 .glass-card .table thead th {
-  background: rgba(255, 255, 255, 0.05);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.65);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.35);
+  color: #475569;
   font-weight: 600;
   text-transform: uppercase;
   font-size: 0.75rem;
@@ -658,12 +771,30 @@ body {
 }
 
 .glass-card .table tbody td {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
   padding: 12px 16px;
   vertical-align: middle;
 }
 
 .glass-card .table tbody tr:hover {
+  background: rgba(248, 250, 252, 0.8);
+}
+
+.dark .glass-card .table {
+  color: #e2e8f0;
+}
+
+.dark .glass-card .table thead th {
+  background: rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+}
+
+.dark .glass-card .table tbody td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.dark .glass-card .table tbody tr:hover {
   background: rgba(255, 255, 255, 0.05);
 }
 

@@ -1,4 +1,4 @@
-import { Badge } from 'react-bootstrap';
+import { Badge } from '../../ui/Badge';
 import { motion, AnimatePresence } from 'framer-motion';
 import GlassCard from '../common/GlassCard';
 import { CrimeReport } from '../../../api';
@@ -41,7 +41,7 @@ export default function MyReports({ reports, onViewDetails }: MyReportsProps) {
             >
               <div className="d-flex justify-content-between align-items-start mb-2">
                 <h6 className="mb-0 report-title">{report.title}</h6>
-                <Badge bg={statusColors[report.status] || 'secondary'}>
+                <Badge variant={(statusColors[report.status] as 'warning' | 'info' | 'success' | 'secondary') || 'secondary'}>
                   {report.status?.replace('_', ' ')}
                 </Badge>
               </div>

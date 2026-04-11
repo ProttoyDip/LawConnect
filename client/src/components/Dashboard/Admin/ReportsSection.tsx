@@ -1,7 +1,8 @@
-import { Button } from 'react-bootstrap';
+import { Button } from '../../ui/Button';
 import { motion } from 'framer-motion';
 import GlassCard from '../common/GlassCard';
 import toast from 'react-hot-toast';
+import { Download, FileText, CheckCircle, Archive } from 'lucide-react';
 
 interface ReportsSectionProps {
   analytics: {
@@ -18,97 +19,121 @@ export default function ReportsSection({ analytics }: ReportsSectionProps) {
 
   return (
     <GlassCard>
-      <h4 className="mb-4">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16" className="me-2">
-          <path d="M14.5 3a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h13zm-13-1A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2h-13z"/>
-          <path d="M3 5.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zM3 8a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9A.5.5 0 0 1 3 8zm0 2.5a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1h-6a.5.5 0 0 1-.5-.5z"/>
-        </svg>
-        Reports & Analytics
-      </h4>
-
-      <div className="row g-3">
-        <div className="col-md-6">
-          <motion.div
-            whileHover={{ scale: 1.02 }}
-            className="analytics-summary-card"
-          >
-            <div className="d-flex justify-content-between align-items-center p-3">
-              <div>
-                <h6 className="mb-1">Total Reports</h6>
-                <span className="h3 mb-0">{analytics.total_reports}</span>
-              </div>
-              <Button variant="outline-primary" size="sm" onClick={() => handleDownload('Total')}>
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" className="me-1">
-                  <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
-                  <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
-                </svg>
-                Download
-              </Button>
-            </div>
-          </motion.div>
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-10 h-10 bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl flex items-center justify-center">
+          <FileText className="w-5 h-5 text-white" />
         </div>
-
-        <div className="col-md-6">
-          <motion.div
-            whileHover={{ scale: 1.02 }}
-            className="analytics-summary-card"
-          >
-            <div className="d-flex justify-content-between align-items-center p-3">
-              <div>
-                <h6 className="mb-1">Resolved Cases</h6>
-                <span className="h3 mb-0 text-success">{analytics.resolved_reports}</span>
-              </div>
-              <Button variant="outline-success" size="sm" onClick={() => handleDownload('Resolved')}>
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" className="me-1">
-                  <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
-                  <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
-                </svg>
-                Download
-              </Button>
-            </div>
-          </motion.div>
+        <div>
+          <h4 className="mb-0 font-semibold text-lg">Reports & Analytics</h4>
+          <p className="text-sm text-slate-500 mb-0">Download detailed reports for your records</p>
         </div>
+      </div>
 
-        <div className="col-md-6">
-          <motion.div
-            whileHover={{ scale: 1.02 }}
-            className="analytics-summary-card"
-          >
-            <div className="d-flex justify-content-between align-items-center p-3">
-              <div>
-                <h6 className="mb-1">Closed Cases</h6>
-                <span className="h3 mb-0 text-secondary">{analytics.closed_reports}</span>
-              </div>
-              <Button variant="outline-secondary" size="sm" onClick={() => handleDownload('Closed')}>
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" className="me-1">
-                  <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
-                  <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
-                </svg>
-                Download
-              </Button>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Total Reports */}
+        <motion.div
+          whileHover={{ scale: 1.02 }}
+          className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border border-blue-100 dark:border-blue-800"
+        >
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-sm text-slate-500 mb-1">Total Reports</p>
+              <p className="text-3xl font-bold text-slate-900 dark:text-white">{analytics.total_reports}</p>
             </div>
-          </motion.div>
-        </div>
+            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+              <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            </div>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="w-full mt-4"
+            onClick={() => handleDownload('Total')}
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Download
+          </Button>
+        </motion.div>
 
-        <div className="col-md-6">
-          <motion.div
-            whileHover={{ scale: 1.02 }}
-            className="analytics-summary-card"
-          >
-            <div className="d-flex justify-content-between align-items-center p-3">
-              <div>
-                <h6 className="mb-1">Analytics Summary</h6>
-                <span className="h3 mb-0 text-info">View</span>
-              </div>
-              <Button variant="outline-info" size="sm" onClick={() => handleDownload('Analytics')}>
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" className="me-1">
-                  <path d="M4 11H2v3h2v-3zm5-4H7v7h2V7zm5-5h-2v12h2V2zm-2-1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1h-2zM6 7a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7zm-5 4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1v-3z"/>
-                </svg>
-                View Analytics
-              </Button>
+        {/* Resolved Cases */}
+        <motion.div
+          whileHover={{ scale: 1.02 }}
+          className="p-4 bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20 rounded-xl border border-emerald-100 dark:border-emerald-800"
+        >
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-sm text-slate-500 mb-1">Resolved Cases</p>
+              <p className="text-3xl font-bold text-emerald-600">{analytics.resolved_reports}</p>
             </div>
-          </motion.div>
-        </div>
+            <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg flex items-center justify-center">
+              <CheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+            </div>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="w-full mt-4"
+            onClick={() => handleDownload('Resolved')}
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Download
+          </Button>
+        </motion.div>
+
+        {/* Closed Cases */}
+        <motion.div
+          whileHover={{ scale: 1.02 }}
+          className="p-4 bg-gradient-to-br from-slate-50 to-gray-50 dark:from-slate-800/50 dark:to-gray-800/50 rounded-xl border border-slate-200 dark:border-slate-700"
+        >
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-sm text-slate-500 mb-1">Closed Cases</p>
+              <p className="text-3xl font-bold text-slate-600 dark:text-slate-300">{analytics.closed_reports}</p>
+            </div>
+            <div className="w-10 h-10 bg-slate-100 dark:bg-slate-700 rounded-lg flex items-center justify-center">
+              <Archive className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+            </div>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="w-full mt-4"
+            onClick={() => handleDownload('Closed')}
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Download
+          </Button>
+        </motion.div>
+
+        {/* Analytics Summary */}
+        <motion.div
+          whileHover={{ scale: 1.02 }}
+          className="p-4 bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-purple-900/20 rounded-xl border border-violet-100 dark:border-violet-800"
+        >
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-sm text-slate-500 mb-1">Analytics Summary</p>
+              <p className="text-lg font-bold text-slate-900 dark:text-white">
+                {analytics.total_reports > 0 
+                  ? `${((analytics.resolved_reports / analytics.total_reports) * 100).toFixed(0)}%`
+                  : '0%'} 
+                <span className="text-sm font-normal text-slate-500 ml-1">resolved</span>
+              </p>
+            </div>
+            <div className="w-10 h-10 bg-violet-100 dark:bg-violet-900/30 rounded-lg flex items-center justify-center">
+              <FileText className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+            </div>
+          </div>
+          <Button 
+            variant="primary" 
+            size="sm" 
+            className="w-full mt-4"
+            onClick={() => handleDownload('Analytics')}
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Full Report
+          </Button>
+        </motion.div>
       </div>
     </GlassCard>
   );

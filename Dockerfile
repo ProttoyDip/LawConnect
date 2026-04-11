@@ -1,22 +1,22 @@
 # Use an official PHP image with Apache
 FROM php:8.2-apache
 
-# ENV Arguments 
-ARG APP_NAME
-ARG APP_ENV
-ARG APP_KEY
-ARG APP_DEBUG
-ARG APP_URL
-ARG FRONTEND_URL
-ARG LOG_LEVEL
-ARG DB_CONNECTION
-ARG DB_HOST
-ARG DB_PORT
-ARG DB_DATABASE
-ARG DB_USERNAME
-ARG DB_PASSWORD
+# ENV Arguments with MySQL defaults
+ARG APP_NAME="LawConnect"
+ARG APP_ENV="local"
+ARG APP_KEY="base64:change-me-with-php-artisan-key-generate"
+ARG APP_DEBUG="true"
+ARG APP_URL="http://localhost:8000"
+ARG FRONTEND_URL="http://localhost:5173"
+ARG LOG_LEVEL="debug"
+ARG DB_CONNECTION="mysql"
+ARG DB_HOST="db"
+ARG DB_PORT="3306"
+ARG DB_DATABASE="lawconnect"
+ARG DB_USERNAME="root"
+ARG DB_PASSWORD="root"
 
-ARG VITE_BACKEND_ENDPOINT
+ARG VITE_BACKEND_ENDPOINT="http://localhost:8000"
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -73,8 +73,8 @@ RUN echo "APP_NAME=${APP_NAME}" >> .env && \
     echo "DB_CONNECTION=${DB_CONNECTION}" >> .env && \
     echo "DB_HOST=${DB_HOST}" >> .env && \
     echo "DB_DATABASE=${DB_DATABASE}" >> .env && \
-    echo "DB_DATABASE=${DB_USERNAME}" >> .env && \
-    echo "DB_DATABASE=${DB_PASSWORD}" >> .env && \
+    echo "DB_USERNAME=${DB_USERNAME}" >> .env && \
+    echo "DB_PASSWORD=${DB_PASSWORD}" >> .env && \
     echo "DB_PORT=${DB_PORT}" >> .env
 
 # Set permissions for Laravel storage and cache
@@ -83,10 +83,7 @@ RUN chown -R www-data:www-data /var/www/html && chmod -R 775 /var/www/html/stora
 # RUN ls -a
 # RUN echo "hello wrld"
 
-RUN cd client && npm install && npm run build
-
-# # Move React build to Laravel public directory
-RUN cp -r client/dist/* public/
+RUN cd client && npm install && npm run build -- --outDir ../public/build
 
 # # Expose port 80 for Apache
 EXPOSE 80

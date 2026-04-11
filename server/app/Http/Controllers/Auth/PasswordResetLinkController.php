@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
+use Throwable;
 
 class PasswordResetLinkController extends Controller
 {
@@ -23,19 +25,28 @@ class PasswordResetLinkController extends Controller
             'email' => ['required', 'email'],
         ]);
 
-        // We will send the password reset link to this user. Once we have attempted
-        // to send the link, we will examine the response then see the message we
-        // need to show to the user. Finally, we'll send out a proper response.
-        $status = Password::sendResetLink(
-            $request->only('email')
-        );
+        try {
+            // Send reset link and return a clear JSON response for SPA clients.
+            $status = Password::sendResetLink(
+                $request->only('email')
+            );
 
-        if ($status != Password::RESET_LINK_SENT) {
-            throw ValidationException::withMessages([
-                'email' => [__($status)],
+            if ($status != Password::RESET_LINK_SENT) {
+                throw ValidationException::withMessages([
+                    'email' => [__($status)],
+                ]);
+            }
+
+            return response()->json(['status' => __($status)]);
+        } catch (Throwable $e) {
+            Log::error('Failed to send password reset link.', [
+                'email' => $request->input('email'),
+                'error' => $e->getMessage(),
             ]);
-        }
 
-        return response()->json(['status' => __($status)]);
+            return response()->json([
+                'message' => 'Unable to send reset email right now. Please try again shortly.',
+            ], 503);
+        }
     }
 }

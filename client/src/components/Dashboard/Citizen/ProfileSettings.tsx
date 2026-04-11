@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Button, Form } from 'react-bootstrap';
+import { Button } from '../../ui/Button';
+import { FormGroup, FormInput, FormLabel, FormTextarea } from '../../ui/Form';
 import { motion } from 'framer-motion';
 import GlassCard from '../common/GlassCard';
 import { User } from '../../../api';
@@ -68,89 +69,88 @@ export default function ProfileSettings({ user, onUpdate, onPasswordChange }: Pr
       </div>
 
       {activeTab === 'profile' && (
-        <Form>
-          <Form.Group className="mb-3">
-            <Form.Label>Full Name</Form.Label>
-            <Form.Control
+        <div>
+          <FormGroup className="mb-3">
+            <FormLabel>Full Name</FormLabel>
+            <FormInput
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
-          </Form.Group>
+          </FormGroup>
 
-          <Form.Group className="mb-3">
-            <Form.Label>Email</Form.Label>
-            <Form.Control
+          <FormGroup className="mb-3">
+            <FormLabel>Email</FormLabel>
+            <FormInput
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
-          </Form.Group>
+          </FormGroup>
 
-          <Form.Group className="mb-3">
-            <Form.Label>Phone (optional)</Form.Label>
-            <Form.Control
+          <FormGroup className="mb-3">
+            <FormLabel>Phone (optional)</FormLabel>
+            <FormInput
               type="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="Enter phone number"
             />
-          </Form.Group>
+          </FormGroup>
 
-          <Form.Group className="mb-4">
-            <Form.Label>Address (optional)</Form.Label>
-            <Form.Control
-              as="textarea"
+          <FormGroup className="mb-4">
+            <FormLabel>Address (optional)</FormLabel>
+            <FormTextarea
               rows={2}
               value={address}
               onChange={(e) => setAddress(e.target.value)}
               placeholder="Enter address"
             />
-          </Form.Group>
+          </FormGroup>
 
           <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
             <Button variant="primary" onClick={handleProfileUpdate}>
               Save Changes
             </Button>
           </motion.div>
-        </Form>
+        </div>
       )}
 
       {activeTab === 'password' && (
-        <Form>
-          <Form.Group className="mb-3">
-            <Form.Label>Current Password</Form.Label>
-            <Form.Control
+        <div>
+          <FormGroup className="mb-3">
+            <FormLabel>Current Password</FormLabel>
+            <FormInput
               type="password"
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
             />
-          </Form.Group>
+          </FormGroup>
 
-          <Form.Group className="mb-3">
-            <Form.Label>New Password</Form.Label>
-            <Form.Control
+          <FormGroup className="mb-3">
+            <FormLabel>New Password</FormLabel>
+            <FormInput
               type="password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
             />
-          </Form.Group>
+          </FormGroup>
 
-          <Form.Group className="mb-4">
-            <Form.Label>Confirm New Password</Form.Label>
-            <Form.Control
+          <FormGroup className="mb-4">
+            <FormLabel>Confirm New Password</FormLabel>
+            <FormInput
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
             />
-          </Form.Group>
+          </FormGroup>
 
           <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
             <Button variant="primary" onClick={handlePasswordChange}>
               Change Password
             </Button>
           </motion.div>
-        </Form>
+        </div>
       )}
     </GlassCard>
   );

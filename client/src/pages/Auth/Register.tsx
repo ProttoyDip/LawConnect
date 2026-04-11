@@ -1,34 +1,98 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Eye, EyeOff, Mail, Lock, User, Shield, Users, Phone, MapPin } from 'lucide-react';
-import ApiClient from '../../api';
+import { Eye, EyeOff, Mail, Lock, User, Shield, Phone, MapPin } from 'lucide-react';
+import ApiClient, { InvitationPreview } from '../../api';
 import toast from 'react-hot-toast';
+import { redirectAuthenticatedUser } from '../../utils/authRedirect';
+import { getRoleHomePath, isUserRole } from '../../utils/roles';
 
 const apiClient = new ApiClient();
 
-const roleOptions = [
-  { id: 'citizen', label: 'Citizen', icon: Users, description: 'Report crimes and track cases' },
-  { id: 'police', label: 'Police', icon: Shield, description: 'Investigate and manage cases' },
-  { id: 'admin', label: 'Admin', icon: Shield, description: 'Full system access' },
-];
-
 export default function Register() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const inviteToken = searchParams.get('invite')?.trim() || '';
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [nationalId, setNationalId] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [role, setRole] = useState('citizen');
   const [loading, setLoading] = useState(false);
+  const [inviteLoading, setInviteLoading] = useState(false);
+  const [invitation, setInvitation] = useState<InvitationPreview | null>(null);
+
+  // Redirect authenticated users away from register page
+  useEffect(() => {
+    let isMounted = true;
+
+    const runRedirectCheck = async () => {
+      if (!isMounted) {
+        return;
+      }
+      await redirectAuthenticatedUser(navigate);
+    };
+
+    void runRedirectCheck();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [navigate]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    if (!inviteToken) {
+      setInvitation(null);
+      return;
+    }
+
+    const loadInvitation = async () => {
+      setInviteLoading(true);
+      try {
+        const data = await apiClient.getInvitation(inviteToken);
+        if (!isMounted) {
+          return;
+        }
+        setInvitation(data);
+        setName(data.name || '');
+        setEmail(data.email || '');
+        setPhone(data.phone || '');
+        setAddress(data.address || '');
+      } catch {
+        if (isMounted) {
+          navigate('/login');
+        }
+      } finally {
+        if (isMounted) {
+          setInviteLoading(false);
+        }
+      }
+    };
+
+    void loadInvitation();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [inviteToken, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!name || !email || !password || !confirmPassword) {
+    const isInviteRegistration = Boolean(inviteToken);
+
+    if (
+      !name ||
+      !email ||
+      !password ||
+      !confirmPassword ||
+      (!isInviteRegistration && !nationalId.trim())
+    ) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -43,17 +107,43 @@ export default function Register() {
 
     setLoading(true);
     try {
-      const data = await apiClient.register(name, email, password, confirmPassword, role, phone, address);
+      const data = isInviteRegistration
+        ? await apiClient.registerInvited(inviteToken, password, confirmPassword)
+        : await apiClient.register(
+            name,
+            email,
+            password,
+            confirmPassword,
+            nationalId,
+            'citizen',
+            phone,
+            address
+          );
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
       toast.success('Registration successful');
-      navigate('/dashboard');
+
+      const userRole = data?.user?.role;
+      const normalizedRole = typeof userRole === 'string' ? userRole : userRole?.name;
+      if (isUserRole(normalizedRole)) {
+        navigate(getRoleHomePath(normalizedRole));
+      } else {
+        navigate('/dashboard');
+      }
     } catch {
       // error already handled by ApiClient
     } finally {
       setLoading(false);
     }
   };
+
+  if (inviteLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4 py-20 bg-slate-50 dark:bg-slate-900 transition-colors">
+        <div className="text-slate-600 dark:text-slate-300">Validating invitation...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-20 bg-slate-50 dark:bg-slate-900 transition-colors">
@@ -77,35 +167,16 @@ export default function Register() {
               </div>
             </Link>
             <h1 className="mt-6 text-2xl font-bold text-slate-900 dark:text-white">
-              Create Account
+              {inviteToken ? 'Complete Invited Registration' : 'Create Account'}
             </h1>
             <p className="mt-2 text-slate-600 dark:text-slate-400">
-              Register with LawConnect
+              {inviteToken ? 'Set your password to activate your invited account' : 'Register with LawConnect'}
             </p>
-          </div>
-
-          {/* Role Selection */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
-              Select Your Role
-            </label>
-            <div className="grid grid-cols-3 gap-2">
-              {roleOptions.map((option) => (
-                <button
-                  key={option.id}
-                  type="button"
-                  onClick={() => setRole(option.id)}
-                  className={`flex flex-col items-center gap-1 p-3 rounded-lg border transition-all ${
-                    role === option.id
-                      ? 'border-navy-800 bg-navy-50 dark:bg-navy-900/20 text-navy-800 dark:text-navy-400'
-                      : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600'
-                  }`}
-                >
-                  <option.icon className="w-5 h-5" />
-                  <span className="text-xs font-medium">{option.label}</span>
-                </button>
-              ))}
-            </div>
+            {inviteToken && invitation?.role && (
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                Invited role: {String(invitation.role).toUpperCase()}
+              </p>
+            )}
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -121,8 +192,10 @@ export default function Register() {
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                  autoComplete="name"
                   className="input-field pl-12 pr-4"
                   placeholder="John Doe"
+                  readOnly={Boolean(inviteToken)}
                   required
                 />
               </div>
@@ -140,12 +213,36 @@ export default function Register() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="email"
                   className="input-field pl-12 pr-4"
                   placeholder="you@example.com"
+                  readOnly={Boolean(inviteToken)}
                   required
                 />
               </div>
             </div>
+
+            {!inviteToken && (
+              <div>
+                <label htmlFor="nationalId" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  National ID *
+                </label>
+                <div className="relative">
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
+                  <input
+                    id="nationalId"
+                    type="text"
+                    value={nationalId}
+                    onChange={(e) => setNationalId(e.target.value)}
+                    autoComplete="off"
+                    className="input-field pl-12 pr-4"
+                    placeholder="Enter your National ID"
+                    maxLength={20}
+                    required
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Phone */}
             <div>
@@ -159,8 +256,10 @@ export default function Register() {
                   type="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
+                  autoComplete="tel"
                   className="input-field pl-12 pr-4"
                   placeholder="+1 (555) 000-0000"
+                  readOnly={Boolean(inviteToken)}
                 />
               </div>
             </div>
@@ -176,9 +275,11 @@ export default function Register() {
                   id="address"
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
+                  autoComplete="street-address"
                   rows={2}
                   className="input-field pl-12 pr-4 py-3 resize-none"
                   placeholder="Your address"
+                  readOnly={Boolean(inviteToken)}
                 />
               </div>
             </div>
@@ -195,6 +296,7 @@ export default function Register() {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="new-password"
                   className="input-field pl-12 pr-12"
                   placeholder="••••••••"
                   required
@@ -223,6 +325,7 @@ export default function Register() {
                   type={showPassword ? 'text' : 'password'}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
+                  autoComplete="new-password"
                   className="input-field pl-12 pr-4"
                   placeholder="••••••••"
                   required
@@ -238,7 +341,7 @@ export default function Register() {
               disabled={loading}
               className="w-full py-3 px-6 bg-navy-800 hover:bg-navy-900 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-6"
             >
-              {loading ? 'Creating account...' : 'Create Account'}
+              {loading ? 'Creating account...' : inviteToken ? 'Activate Account' : 'Create Account'}
             </motion.button>
           </form>
 

@@ -15,6 +15,30 @@ class RoleMiddleware
     public function handle(Request $request, Closure $next, string ...$roles)
     {
         $user = $request->user();
+        
+        // Always load the role relationship for API requests
+        if ($user && !$user->relationLoaded('role')) {
+            $user->load('role');
+        }
+        
+        // DEBUG: Log role check failure
+        if (!$user) {
+            \Log::error('RoleMiddleware: No authenticated user');
+        } else {
+            \Log::info('RoleMiddleware DEBUG', [
+                'user_id' => $user->id,
+                'user_email' => $user->email,
+                'role_id' => $user->role_id,
+                'role_name' => $user->role?->name,
+                'required_roles' => $roles
+            ]);
+            if (!$user->hasRole(...$roles)) {
+                \Log::warning('RoleMiddleware: User lacks required role', [
+                    'user_id' => $user->id,
+                    'has_role' => $user->role?->name
+                ]);
+            }
+        }
 
         if (!$user || !$user->hasRole(...$roles)) {
             if ($request->expectsJson()) {

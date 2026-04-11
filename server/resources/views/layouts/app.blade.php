@@ -12,10 +12,6 @@
     @stack('styles')
 </head>
 <body class="min-h-screen bg-gray-100 text-gray-800">
-
-    {{-- Navigation --}}
-    @include('partials.nav')
-
     {{-- Flash Messages --}}
     @include('partials.flash')
 

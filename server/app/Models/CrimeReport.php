@@ -90,6 +90,11 @@ class CrimeReport extends Model
         return $this->hasMany(CaseStatusUpdate::class);
     }
 
+    public function investigationNotes()
+    {
+        return $this->hasMany(InvestigationNote::class);
+    }
+
     /* ---- Helpers ---- */
 
     public function assignedOfficer()
@@ -97,3 +102,4 @@ class CrimeReport extends Model
         return $this->policeAssignments()->latest('assigned_at')->first()?->officer;
     }
 }
+

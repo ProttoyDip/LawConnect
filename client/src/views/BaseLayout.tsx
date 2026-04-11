@@ -1,5 +1,5 @@
 import { ReactNode, useEffect, useState } from "react";
-import { Button } from "react-bootstrap";
+import { Button } from "../components/ui/Button";
 import { Link, useNavigate } from "react-router-dom";
 import ApiClient, { User } from "../api";
 import toast from "react-hot-toast";
@@ -64,7 +64,7 @@ const BaseLayout: React.FC<BaseLayoutProps> = ({ children }) => {
                   </Button>
                 </li>
                 <li className="nav-item">
-                  <Button variant="danger" className="me-2 text-white" onClick={() => navigate("/report-crime")}>
+                  <Button variant="destructive" className="me-2 text-white" onClick={() => navigate("/report-crime")}>
                     Report Crime
                   </Button>
                 </li>
@@ -85,7 +85,7 @@ const BaseLayout: React.FC<BaseLayoutProps> = ({ children }) => {
               </li>
             )}
             <li className="nav-item">
-              <Button variant="outline-dark" onClick={handleLogout}>
+              <Button variant="outline-secondary" className="border-gray-300 text-gray-700 hover:bg-gray-50" onClick={handleLogout}>
                 Logout
               </Button>
             </li>
