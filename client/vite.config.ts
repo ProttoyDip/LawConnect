@@ -14,6 +14,6 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: '../server/public/build',
+    outDir: process.env.VITE_OUT_DIR || 'dist',
   },
 })

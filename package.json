@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
+    "start": "node server.js",
+    "migrate": "node migrations/runMigrations.js",
     "start:client": "cd client && npm run dev",
     "start:server": "cd server && php artisan serve",
     "build:client": "cd client && npm run build",
@@ -13,7 +15,11 @@
   "author": "Ali Ahnaf",
   "license": "ISC",
   "dependencies": {
+    "bcryptjs": "^2.4.3",
     "bootstrap": "^5.3.8",
+    "dotenv": "^16.6.1",
+    "express": "^4.21.2",
+    "mysql2": "^3.15.2",
     "react-bootstrap": "^2.10.10",
     "react-hot-toast": "^2.6.0"
   }
