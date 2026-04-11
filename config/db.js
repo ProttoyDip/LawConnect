@@ -1,5 +1,6 @@
 const mysql = require('mysql2/promise');
 const dotenv = require('dotenv');
+const { URL } = require('url');
 
 dotenv.config();
 
@@ -13,12 +14,62 @@ function firstDefined(...values) {
   return undefined;
 }
 
-const host = firstDefined(process.env.DB_HOST, process.env.MYSQLHOST, process.env.MYSQL_HOST);
-const port = Number(firstDefined(process.env.DB_PORT, process.env.MYSQLPORT, process.env.MYSQL_PORT) || 3306);
-const user = firstDefined(process.env.DB_USER, process.env.DB_USERNAME, process.env.MYSQLUSER, process.env.MYSQL_USER);
-const password = firstDefined(process.env.DB_PASSWORD, process.env.MYSQLPASSWORD, process.env.MYSQL_PASSWORD);
-const database = firstDefined(process.env.DB_NAME, process.env.DB_DATABASE, process.env.MYSQLDATABASE, process.env.MYSQL_DATABASE);
-const requiresSsl = String(firstDefined(process.env.DB_SSL, process.env.MYSQL_SSL, 'false')).toLowerCase() === 'true';
+function parseConnectionUrl(connectionUrl) {
+  if (!connectionUrl) {
+    return null;
+  }
+
+  try {
+    const parsed = new URL(connectionUrl);
+
+    return {
+      host: parsed.hostname || undefined,
+      port: parsed.port ? Number(parsed.port) : undefined,
+      user: parsed.username || undefined,
+      password: parsed.password || undefined,
+      database: parsed.pathname ? decodeURIComponent(parsed.pathname.replace(/^\//, '')) || undefined : undefined,
+      ssl: parsed.searchParams.get('ssl'),
+    };
+  } catch {
+    return null;
+  }
+}
+
+const connectionUrlConfig =
+  parseConnectionUrl(process.env.DATABASE_URL) || parseConnectionUrl(process.env.MYSQL_URL) || {};
+
+const host = firstDefined(
+  process.env.DB_HOST,
+  process.env.MYSQLHOST,
+  process.env.MYSQL_HOST,
+  connectionUrlConfig.host
+);
+const port = Number(
+  firstDefined(process.env.DB_PORT, process.env.MYSQLPORT, process.env.MYSQL_PORT, connectionUrlConfig.port) || 3306
+);
+const user = firstDefined(
+  process.env.DB_USER,
+  process.env.DB_USERNAME,
+  process.env.MYSQLUSER,
+  process.env.MYSQL_USER,
+  connectionUrlConfig.user
+);
+const password = firstDefined(
+  process.env.DB_PASSWORD,
+  process.env.MYSQLPASSWORD,
+  process.env.MYSQL_PASSWORD,
+  connectionUrlConfig.password
+);
+const database = firstDefined(
+  process.env.DB_NAME,
+  process.env.DB_DATABASE,
+  process.env.MYSQLDATABASE,
+  process.env.MYSQL_DATABASE,
+  connectionUrlConfig.database
+);
+const requiresSsl = String(
+  firstDefined(process.env.DB_SSL, process.env.MYSQL_SSL, connectionUrlConfig.ssl, 'false')
+).toLowerCase() === 'true';
 
 const requiredVars = [
   ['host', host],
