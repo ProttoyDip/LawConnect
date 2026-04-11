@@ -6,9 +6,13 @@ function normalizeEndpoint(value: string) {
 function getDefaultBackendEndpoint() {
   const isViteDevServer = import.meta.env.DEV && typeof window !== 'undefined' && window.location.port === '5173';
 
-  // Use the Vite proxy only when the app is actually running on the dev server.
-  // In non-dev builds, require an explicit VITE_BACKEND_ENDPOINT from the hosting platform.
-  return isViteDevServer ? '' : '';
+  if (isViteDevServer) {
+    // Use Vite proxy in local dev.
+    return '';
+  }
+
+  // Safety fallback for production builds when hosting env vars are missing.
+  return 'https://lawconnect-zccz.onrender.com';
 }
 
 export const secrets = {
