@@ -48,14 +48,6 @@ app.get('/api/health', (req, res) => {
 
 app.use('/api', userRoutes);
 
-app.all('/api/auth/*', (req, res) => {
-  res.status(501).json({
-    success: false,
-    message:
-      'Auth endpoints are not implemented in this Node service. Deploy the Laravel server as the backend for /api/auth/* routes.',
-  });
-});
-
 app.use((req, res) => {
   res.status(404).json({
     success: false,
