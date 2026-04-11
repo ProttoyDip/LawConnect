@@ -1,6 +1,6 @@
 const express = require('express');
 const dotenv = require('dotenv');
-const { checkDatabaseConnection } = require('./config/db');
+const { checkDatabaseConnection, configSource, database } = require('./config/db');
 const userRoutes = require('./routes/user.routes');
 
 dotenv.config();
@@ -37,6 +37,7 @@ app.use((error, req, res, next) => {
 async function startServer() {
   try {
     await checkDatabaseConnection();
+    console.log(`DB config source: ${configSource} (${database})`);
 
     app.listen(port, () => {
       console.log(`Server running on port ${port}`);

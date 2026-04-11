@@ -35,8 +35,14 @@ function parseConnectionUrl(connectionUrl) {
   }
 }
 
-const connectionUrlConfig =
-  parseConnectionUrl(process.env.DATABASE_URL) || parseConnectionUrl(process.env.MYSQL_URL) || {};
+const databaseUrlConfig = parseConnectionUrl(process.env.DATABASE_URL);
+const mysqlUrlConfig = parseConnectionUrl(process.env.MYSQL_URL);
+const connectionUrlConfig = databaseUrlConfig || mysqlUrlConfig || {};
+const configSource = databaseUrlConfig
+  ? 'DATABASE_URL'
+  : mysqlUrlConfig
+    ? 'MYSQL_URL'
+    : 'discrete environment variables';
 
 const host = firstDefined(
   process.env.DB_HOST,
@@ -105,9 +111,12 @@ async function checkDatabaseConnection() {
   try {
     connection = await pool.getConnection();
     await connection.query('SELECT 1');
-    console.log(`Database connection established (${user}@${host}:${port}/${database}).`);
+    console.log(`Database connection established (${user}@${host}:${port}/${database}) via ${configSource}.`);
   } catch (error) {
-    console.error(`Failed to connect to database (${user}@${host}:${port}/${database}):`, error.message);
+    console.error(
+      `Failed to connect to database (${user}@${host}:${port}/${database}) via ${configSource}:`,
+      error.message
+    );
     throw error;
   } finally {
     if (connection) {
@@ -119,4 +128,6 @@ async function checkDatabaseConnection() {
 module.exports = {
   pool,
   checkDatabaseConnection,
+  configSource,
+  database,
 };
