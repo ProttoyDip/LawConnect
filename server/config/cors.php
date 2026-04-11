@@ -29,10 +29,13 @@ return [
         'http://127.0.0.1:5173',
         'http://127.0.0.1:5174',
         'http://127.0.0.1:5175',
+        'https://lawconnect-zccz.onrender.com',
         'http://127.0.0.1:5176',
         'http://127.0.0.1:5177',
     ],
 
+        '#^https://.*\.vercel\.app$#',
+        '#^https://.*\.onrender\.com$#',
     'allowed_origins_patterns' => [
         '#^https?://(localhost|127\\.0\\.0\\.1):517[0-9]$#',
     ],
