@@ -1,9 +1,10 @@
 {
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
+  "public": false,
   "rewrites": [
     {
-      "source": "/(?!assets/).*",
+      "source": "/:path*",
       "destination": "/index.html"
     }
   ]
