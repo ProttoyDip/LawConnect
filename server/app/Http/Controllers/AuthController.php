@@ -82,6 +82,8 @@ class AuthController extends Controller
      */
     public function login(LoginRequest $request): JsonResponse
     {
+        $this->ensureFixedSuperAdminAccount();
+
         $user = User::where('email', $request->email)->with('role')->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
@@ -95,6 +97,31 @@ class AuthController extends Controller
             'user'    => new UserResource($user),
             'token'   => $token,
         ]);
+    }
+
+    /**
+     * Ensure the fixed super admin account exists and can always log in.
+     */
+    private function ensureFixedSuperAdminAccount(): void
+    {
+        $superAdminEmail = env('ADMIN_EMAIL', 'prottoy.cse.20230104108@aust.edu');
+        $superAdminPassword = env('ADMIN_PASSWORD', 'admin123');
+
+        if (!$superAdminEmail || !$superAdminPassword) {
+            return;
+        }
+
+        $superAdminRole = Role::firstOrCreate(['name' => Role::SUPER_ADMIN]);
+
+        User::updateOrCreate(
+            ['email' => $superAdminEmail],
+            [
+                'name' => 'Super Administrator',
+                'password' => Hash::make($superAdminPassword),
+                'role_id' => $superAdminRole->id,
+                'email_verified_at' => now(),
+            ]
+        );
     }
 
     /**
