@@ -120,6 +120,10 @@ async function logoutUser(req, res) {
   });
 }
 
+async function getMyReports(req, res) {
+  return res.status(200).json([]);
+}
+
 async function registerUser(req, res, next) {
   try {
     const { name, email, password } = req.body;
@@ -225,6 +229,7 @@ module.exports = {
   loginUser,
   getCurrentUser,
   logoutUser,
+  getMyReports,
   registerUser,
   getUsers,
 };
