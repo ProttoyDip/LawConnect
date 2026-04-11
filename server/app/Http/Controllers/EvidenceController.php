@@ -8,6 +8,7 @@ use App\Models\EvidenceFile;
 use App\Services\EvidenceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class EvidenceController extends Controller
 {
@@ -31,6 +32,46 @@ class EvidenceController extends Controller
 			'message' => count($files) . ' file(s) uploaded.',
 			'evidence' => EvidenceFileResource::collection($files),
 		], 201);
+	}
+
+	/**
+	 * GET /evidence/{id}/download - authenticated evidence download
+	 */
+	public function download(Request $request, int $id)
+	{
+		$evidence = EvidenceFile::with('crimeReport')->findOrFail($id);
+		$user = $request->user();
+
+		if (!$user) {
+			return response()->json(['message' => 'Unauthenticated.'], 401);
+		}
+
+		$report = $evidence->crimeReport;
+		$canAccess = false;
+
+		if ($user->isAdmin()) {
+			$canAccess = true;
+		} elseif ($user->isPolice()) {
+			$isAssigned = $report->policeAssignments()
+				->where('officer_id', $user->id)
+				->exists();
+			$canAccess = $isAssigned || $report->status === 'investigating';
+		} elseif ($user->isCitizen()) {
+			$canAccess = (int) $report->user_id === (int) $user->id;
+		}
+
+		if (!$canAccess) {
+			return response()->json(['message' => 'Forbidden.'], 403);
+		}
+
+		if (!Storage::disk('public')->exists($evidence->file_path)) {
+			return response()->json(['message' => 'Evidence file not found.'], 404);
+		}
+
+		return Storage::disk('public')->download(
+			$evidence->file_path,
+			$evidence->original_name ?? basename($evidence->file_path)
+		);
 	}
 
 	/**

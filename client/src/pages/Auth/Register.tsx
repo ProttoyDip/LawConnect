@@ -1,15 +1,18 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Mail, Lock, User, Shield, Phone, MapPin } from 'lucide-react';
-import ApiClient from '../../api';
+import ApiClient, { InvitationPreview } from '../../api';
 import toast from 'react-hot-toast';
 import { redirectAuthenticatedUser } from '../../utils/authRedirect';
+import { getRoleHomePath, isUserRole } from '../../utils/roles';
 
 const apiClient = new ApiClient();
 
 export default function Register() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const inviteToken = searchParams.get('invite')?.trim() || '';
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [nationalId, setNationalId] = useState('');
@@ -19,6 +22,8 @@ export default function Register() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [inviteLoading, setInviteLoading] = useState(false);
+  const [invitation, setInvitation] = useState<InvitationPreview | null>(null);
 
   // Redirect authenticated users away from register page
   useEffect(() => {
@@ -38,15 +43,55 @@ export default function Register() {
     };
   }, [navigate]);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    if (!inviteToken) {
+      setInvitation(null);
+      return;
+    }
+
+    const loadInvitation = async () => {
+      setInviteLoading(true);
+      try {
+        const data = await apiClient.getInvitation(inviteToken);
+        if (!isMounted) {
+          return;
+        }
+        setInvitation(data);
+        setName(data.name || '');
+        setEmail(data.email || '');
+        setPhone(data.phone || '');
+        setAddress(data.address || '');
+      } catch {
+        if (isMounted) {
+          navigate('/login');
+        }
+      } finally {
+        if (isMounted) {
+          setInviteLoading(false);
+        }
+      }
+    };
+
+    void loadInvitation();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [inviteToken, navigate]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const isInviteRegistration = Boolean(inviteToken);
 
     if (
       !name ||
       !email ||
       !password ||
       !confirmPassword ||
-      !nationalId.trim()
+      (!isInviteRegistration && !nationalId.trim())
     ) {
       toast.error('Please fill in all required fields');
       return;
@@ -62,26 +107,43 @@ export default function Register() {
 
     setLoading(true);
     try {
-      const data = await apiClient.register(
-        name,
-        email,
-        password,
-        confirmPassword,
-        nationalId,
-        'citizen',
-        phone,
-        address
-      );
+      const data = isInviteRegistration
+        ? await apiClient.registerInvited(inviteToken, password, confirmPassword)
+        : await apiClient.register(
+            name,
+            email,
+            password,
+            confirmPassword,
+            nationalId,
+            'citizen',
+            phone,
+            address
+          );
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
       toast.success('Registration successful');
-      navigate('/dashboard');
+
+      const userRole = data?.user?.role;
+      const normalizedRole = typeof userRole === 'string' ? userRole : userRole?.name;
+      if (isUserRole(normalizedRole)) {
+        navigate(getRoleHomePath(normalizedRole));
+      } else {
+        navigate('/dashboard');
+      }
     } catch {
       // error already handled by ApiClient
     } finally {
       setLoading(false);
     }
   };
+
+  if (inviteLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4 py-20 bg-slate-50 dark:bg-slate-900 transition-colors">
+        <div className="text-slate-600 dark:text-slate-300">Validating invitation...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-20 bg-slate-50 dark:bg-slate-900 transition-colors">
@@ -105,11 +167,16 @@ export default function Register() {
               </div>
             </Link>
             <h1 className="mt-6 text-2xl font-bold text-slate-900 dark:text-white">
-              Create Account
+              {inviteToken ? 'Complete Invited Registration' : 'Create Account'}
             </h1>
             <p className="mt-2 text-slate-600 dark:text-slate-400">
-              Register with LawConnect
+              {inviteToken ? 'Set your password to activate your invited account' : 'Register with LawConnect'}
             </p>
+            {inviteToken && invitation?.role && (
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                Invited role: {String(invitation.role).toUpperCase()}
+              </p>
+            )}
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -128,6 +195,7 @@ export default function Register() {
                   autoComplete="name"
                   className="input-field pl-12 pr-4"
                   placeholder="John Doe"
+                  readOnly={Boolean(inviteToken)}
                   required
                 />
               </div>
@@ -148,31 +216,33 @@ export default function Register() {
                   autoComplete="email"
                   className="input-field pl-12 pr-4"
                   placeholder="you@example.com"
+                  readOnly={Boolean(inviteToken)}
                   required
                 />
               </div>
             </div>
 
-            {/* National ID */}
-            <div>
-              <label htmlFor="nationalId" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                National ID *
-              </label>
-              <div className="relative">
-                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
-                <input
-                  id="nationalId"
-                  type="text"
-                  value={nationalId}
-                  onChange={(e) => setNationalId(e.target.value)}
-                  autoComplete="off"
-                  className="input-field pl-12 pr-4"
-                  placeholder="Enter your National ID"
-                  maxLength={20}
-                  required
-                />
+            {!inviteToken && (
+              <div>
+                <label htmlFor="nationalId" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  National ID *
+                </label>
+                <div className="relative">
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
+                  <input
+                    id="nationalId"
+                    type="text"
+                    value={nationalId}
+                    onChange={(e) => setNationalId(e.target.value)}
+                    autoComplete="off"
+                    className="input-field pl-12 pr-4"
+                    placeholder="Enter your National ID"
+                    maxLength={20}
+                    required
+                  />
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Phone */}
             <div>
@@ -189,6 +259,7 @@ export default function Register() {
                   autoComplete="tel"
                   className="input-field pl-12 pr-4"
                   placeholder="+1 (555) 000-0000"
+                  readOnly={Boolean(inviteToken)}
                 />
               </div>
             </div>
@@ -208,6 +279,7 @@ export default function Register() {
                   rows={2}
                   className="input-field pl-12 pr-4 py-3 resize-none"
                   placeholder="Your address"
+                  readOnly={Boolean(inviteToken)}
                 />
               </div>
             </div>
@@ -269,7 +341,7 @@ export default function Register() {
               disabled={loading}
               className="w-full py-3 px-6 bg-navy-800 hover:bg-navy-900 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-6"
             >
-              {loading ? 'Creating account...' : 'Create Account'}
+              {loading ? 'Creating account...' : inviteToken ? 'Activate Account' : 'Create Account'}
             </motion.button>
           </form>
 

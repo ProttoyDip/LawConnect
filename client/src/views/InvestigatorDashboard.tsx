@@ -7,6 +7,7 @@ import ApiClient, { User, CrimeReport, StatusUpdate } from '../api';
 import PageTransition from '../components/PageTransition';
 import { useTheme } from '../context/ThemeContext';
 import { cn } from '../utils/cn';
+import { isPoliceRole } from '../utils/roles';
 
 import Sidebar from '../components/layout/Sidebar';
 import Header from '../components/layout/Header';
@@ -132,7 +133,7 @@ export default function InvestigatorDashboard() {
       try {
         const userData = await apiClient.getMe(true);
 
-        if (userData.role !== 'police') {
+        if (!isPoliceRole(userData.role)) {
           navigate('/dashboard');
           return;
         }

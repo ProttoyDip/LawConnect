@@ -20,9 +20,13 @@ use App\Http\Controllers\NotificationController;
 |--------------------------------------------------------------------------
 */
 
-// ── CSRF Token Endpoint for SPA ────────────────────────────
+// ── Stateless API checks ───────────────────────────────────
+Route::get('/health', function () {
+    return response()->json(['ok' => true]);
+});
+
 Route::get('/csrf-token', function () {
-    return response()->json(['csrf_token' => csrf_token()]);
+    return response()->json(['csrf_token' => bin2hex(random_bytes(16))]);
 });
 
 // ── Public (guest) ─────────────────────────────────────────
@@ -31,6 +35,8 @@ Route::prefix('auth')->group(function () {
     Route::post('/login',    [AuthController::class, 'login']);
     Route::post('/forgot-password', [PasswordResetLinkController::class, 'store']);
     Route::post('/reset-password', [NewPasswordController::class, 'store']);
+    Route::get('/invitations/{token}', [AuthController::class, 'showInvitation']);
+    Route::post('/register-invited', [AuthController::class, 'registerInvited']);
 });
 
 // ── Authenticated ──────────────────────────────────────────
@@ -79,6 +85,7 @@ Route::middleware(['auth:sanctum', 'log.api'])->group(function () {
 
     // Evidence
     Route::post('/crime-report/{id}/evidence', [EvidenceController::class, 'store'])->middleware('role:citizen,police');
+    Route::get('/evidence/{id}/download',      [EvidenceController::class, 'download']);
     Route::delete('/evidence/{id}',            [EvidenceController::class, 'destroy'])->middleware('role:admin');
 
     // Status Updates
@@ -93,5 +100,6 @@ Route::middleware(['auth:sanctum', 'log.api'])->group(function () {
     Route::get('/admin/analytics', [AnalyticsController::class, 'index'])->middleware('role:admin');
     Route::get('/admin/users', [AnalyticsController::class, 'users'])->middleware('role:admin');
     Route::post('/admin/users', [AdminUserController::class, 'store'])->middleware('role:admin');
+    Route::delete('/admin/users/{user}', [AdminUserController::class, 'destroy'])->middleware('role:admin');
 });
 

@@ -26,7 +26,7 @@ export default function UserManagement({
 }: UserManagementProps) {
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
-  const [newUser, setNewUser] = useState({ name: '', email: '', role: 'citizen' });
+  const [newUser, setNewUser] = useState({ name: '', email: '', role: 'investigator' });
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
 
@@ -57,7 +57,7 @@ export default function UserManagement({
   };
 
   const handleAdd = () => {
-    setNewUser({ name: '', email: '', role: 'citizen' });
+    setNewUser({ name: '', email: '', role: 'investigator' });
     setEditingUser(null);
     setShowModal(true);
   };
@@ -280,15 +280,15 @@ export default function UserManagement({
               value={editingUser?.role || newUser.role}
               onChange={(e) => {
                 if (editingUser) {
-                  setEditingUser({ ...editingUser, role: e.target.value as 'citizen' | 'police' | 'admin' });
+                  setEditingUser({ ...editingUser, role: e.target.value as User['role'] });
                 } else {
                   setNewUser({ ...newUser, role: e.target.value });
                 }
               }}
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
             >
-              <option value="citizen">Citizen</option>
-              <option value="police">Investigator</option>
+              <option value="investigator">Investigator</option>
+              <option value="officer">Officer</option>
               <option value="admin">Admin</option>
             </select>
           </div>

@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { Card } from '../components/ui/Card';
 import { Table } from '../components/ui/Table';
 import { Button } from '../components/ui/Button';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import ApiClient, { CrimeReport, User } from '../api';
@@ -57,12 +57,14 @@ interface Notification {
   related_id?: number;
 }
 
+type AdminTab = 'overview' | 'cases' | 'users' | 'analytics' | 'notifications' | 'settings';
+
 export default function AdminDashboard() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [user, setUser] = useState<User | null>(null);
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'cases' | 'users' | 'analytics' | 'notifications' | 'settings'>('overview');
   const [cases, setCases] = useState<CrimeReport[]>([]);
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [investigators, setInvestigators] = useState<User[]>([]);
@@ -72,6 +74,20 @@ export default function AdminDashboard() {
   const { theme, toggleTheme } = useTheme();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+
+  const activeTabParam = searchParams.get('tab');
+  const activeTab: AdminTab = activeTabParam === 'cases' || activeTabParam === 'users' || activeTabParam === 'analytics' || activeTabParam === 'notifications' || activeTabParam === 'settings'
+    ? activeTabParam
+    : 'overview';
+
+  const setTab = useCallback((tab: AdminTab) => {
+    setShowNotifications(false);
+    if (tab === 'overview') {
+      setSearchParams({}, { replace: true });
+      return;
+    }
+    setSearchParams({ tab }, { replace: true });
+  }, [setSearchParams]);
 
   const handleLogout = useCallback(async () => {
     try {
@@ -86,15 +102,6 @@ export default function AdminDashboard() {
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
   const openMobileSidebar = () => setIsMobileSidebarOpen(true);
   const closeMobileSidebar = () => setIsMobileSidebarOpen(false);
-
-  useEffect(() => {
-    // Check URL params for tab
-    const params = new URLSearchParams(window.location.search);
-    const tab = params.get('tab');
-    if (tab === 'cases' || tab === 'users' || tab === 'analytics' || tab === 'notifications' || tab === 'settings') {
-      setActiveTab(tab as 'overview' | 'cases' | 'users' | 'analytics' | 'notifications' | 'settings');
-    }
-  }, []);
 
   useEffect(() => {
     const fetchCurrentUser = async () => {
@@ -307,11 +314,85 @@ export default function AdminDashboard() {
               onOpenNotifications={() => setShowNotifications(!showNotifications)}
             />
 
+            {showNotifications && (
+              <div className="px-4 sm:px-6 lg:px-8 pt-4">
+                <Card>
+                  <Card.Header className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-700">
+                    <div className="flex items-center gap-2">
+                      <Bell className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                      <span className="font-semibold text-slate-800 dark:text-white">Recent Notifications</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {unreadNotificationsCount > 0 && (
+                        <Button variant="outline" size="sm" onClick={markAllNotificationsAsRead}>
+                          <CheckCheck className="w-4 h-4 mr-1" />
+                          Mark all as read
+                        </Button>
+                      )}
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={() => {
+                          setShowNotifications(false);
+                          setTab('notifications');
+                        }}
+                      >
+                        View all
+                      </Button>
+                    </div>
+                  </Card.Header>
+                  <Card.Content className="p-0">
+                    {notifications.length === 0 ? (
+                      <div className="p-6 text-center text-slate-500">No notifications yet</div>
+                    ) : (
+                      <div className="divide-y divide-slate-100 dark:divide-slate-700 max-h-80 overflow-y-auto">
+                        {notifications.slice(0, 5).map((notification) => (
+                          <button
+                            key={notification.id}
+                            type="button"
+                            className={cn(
+                              'w-full text-left p-4 flex items-start gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors',
+                              !notification.read && 'bg-indigo-50/50 dark:bg-indigo-900/10'
+                            )}
+                            onClick={() => {
+                              void markNotificationAsRead(notification.id);
+                            }}
+                          >
+                            <div className={cn(
+                              'w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0',
+                              !notification.read ? 'bg-indigo-100 dark:bg-indigo-900/30' : 'bg-slate-100 dark:bg-slate-700'
+                            )}>
+                              {getNotificationIcon(notification.type)}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className={cn(
+                                'text-sm font-medium',
+                                notification.read ? 'text-slate-600 dark:text-slate-400' : 'text-slate-900 dark:text-white'
+                              )}>
+                                {notification.title}
+                              </p>
+                              <p className="text-sm text-slate-500 mt-0.5">{notification.message}</p>
+                              <p className="text-xs text-slate-400 mt-1">
+                                {new Date(notification.created_at).toLocaleString()}
+                              </p>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </Card.Content>
+                </Card>
+              </div>
+            )}
+
             {/* Main Content */}
             <main
               onClick={() => {
                 if (isMobileSidebarOpen) {
                   closeMobileSidebar();
+                }
+                if (showNotifications) {
+                  setShowNotifications(false);
                 }
               }}
               className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto"
@@ -332,7 +413,7 @@ export default function AdminDashboard() {
                 {/* Tab Navigation */}
                 <div className="flex gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl w-fit overflow-x-auto">
                   <button
-                    onClick={() => setActiveTab('overview')}
+                    onClick={() => setTab('overview')}
                     className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
                       activeTab === 'overview'
                         ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
@@ -343,7 +424,7 @@ export default function AdminDashboard() {
                     Overview
                   </button>
                   <button
-                    onClick={() => setActiveTab('cases')}
+                    onClick={() => setTab('cases')}
                     className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
                       activeTab === 'cases'
                         ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
@@ -354,7 +435,7 @@ export default function AdminDashboard() {
                     Cases
                   </button>
                   <button
-                    onClick={() => setActiveTab('users')}
+                    onClick={() => setTab('users')}
                     className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
                       activeTab === 'users'
                         ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
@@ -365,7 +446,7 @@ export default function AdminDashboard() {
                     Users
                   </button>
                   <button
-                    onClick={() => setActiveTab('analytics')}
+                    onClick={() => setTab('analytics')}
                     className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
                       activeTab === 'analytics'
                         ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
@@ -376,7 +457,7 @@ export default function AdminDashboard() {
                     Analytics
                   </button>
                   <button
-                    onClick={() => setActiveTab('notifications')}
+                    onClick={() => setTab('notifications')}
                     className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap relative ${
                       activeTab === 'notifications'
                         ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
@@ -450,7 +531,16 @@ export default function AdminDashboard() {
               console.log('Update user:', user);
             }}
             onUserDelete={(userId) => {
-              console.log('Delete user:', userId);
+              return (async () => {
+                await apiClient.deleteAdminUser(userId);
+                setAllUsers((prevUsers) => prevUsers.filter((u) => u.id !== userId));
+                setActiveUsers((prev) => {
+                  const next = new Set(prev);
+                  next.delete(userId);
+                  return next;
+                });
+                await fetchAnalytics(true);
+              })();
             }}
             onUserAdd={async (user) => {
               const response = await apiClient.createAdminUser(user);
@@ -471,9 +561,9 @@ export default function AdminDashboard() {
               await fetchAnalytics(true);
 
               if (response?.mail_sent) {
-                toast.success('User created and account email sent.');
+                toast.success('Invitation sent. Account will be created after registration.');
               } else {
-                toast.success('User created, but account email could not be sent.');
+                toast.success('Invitation created, but email could not be sent.');
               }
             }}
           />
@@ -628,7 +718,7 @@ export default function AdminDashboard() {
             New Case
           </Button>
           <Button variant="outline" onClick={() => {
-            setActiveTab('users');
+            setTab('users');
           }}>
             <UserPlus className="w-4 h-4 mr-2" />
             Add User
@@ -637,7 +727,7 @@ export default function AdminDashboard() {
             <Download className="w-4 h-4 mr-2" />
             Export Report
           </Button>
-          <Button variant="outline" onClick={() => navigate('/admin?tab=analytics')}>
+          <Button variant="outline" onClick={() => setTab('analytics')}>
             <BarChart3 className="w-4 h-4 mr-2" />
             Full Analytics
           </Button>
@@ -811,7 +901,7 @@ export default function AdminDashboard() {
                 </div>
                 <span className="font-semibold text-slate-800 dark:text-white">Recent Reports</span>
               </div>
-              <Button variant="outline" size="sm" onClick={() => navigate('/admin?tab=cases')}>
+              <Button variant="outline" size="sm" onClick={() => setTab('cases')}>
                 View All
               </Button>
             </Card.Header>

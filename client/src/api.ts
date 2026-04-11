@@ -1,4 +1,4 @@
-import axios, { AxiosError, AxiosHeaders, AxiosInstance } from 'axios';
+import axios, { AxiosError, AxiosInstance } from 'axios';
 import { secrets } from './secrets';
 import toast from 'react-hot-toast';
 import type { UserRole } from './utils/roles';
@@ -21,6 +21,14 @@ export interface User {
 export interface AuthResponse {
   user: User;
   token: string;
+}
+
+export interface InvitationPreview {
+  name: string;
+  email: string;
+  role: string;
+  phone?: string;
+  address?: string;
 }
 
 export interface EvidenceFile {
@@ -66,10 +74,6 @@ export interface CrimeReport {
   statusUpdates?: StatusUpdate[];
 }
 
-interface CsrfTokenResponse {
-  csrf_token?: string;
-}
-
 interface ErrorResponseData {
   message?: string;
   error?: string;
@@ -82,7 +86,6 @@ type ApiError = AxiosError<ErrorResponseData>;
 
 class ApiClient {
   private client: AxiosInstance;
-  private csrfToken: string | null = null;
   private static meRequest: { token: string | null; promise: Promise<User> } | null = null;
   private static meCache: { data: User; expiresAt: number; token: string | null } | null = null;
   private static readonly ME_CACHE_TTL_MS = 15000;
@@ -98,9 +101,6 @@ class ApiClient {
       withCredentials: true,
     });
 
-    // Fetch CSRF token on initialization
-    this.fetchCsrfToken();
-
     // Attach token and CSRF token on every request
     this.client.interceptors.request.use(async (config) => {
       const token = localStorage.getItem('token');
@@ -108,65 +108,10 @@ class ApiClient {
         config.headers.Authorization = `Bearer ${token}`;
       }
 
-      // Ensure CSRF token is present for mutating requests.
-      if (['post', 'put', 'patch', 'delete'].includes(config.method?.toLowerCase() || '')) {
-        if (!this.csrfToken) {
-          await this.fetchCsrfToken();
-        }
-        if (this.csrfToken) {
-          config.headers['X-CSRF-TOKEN'] = this.csrfToken;
-        }
-      }
-
       return config;
     });
 
-    // Session regeneration can invalidate CSRF token. Refresh once and retry.
-    this.client.interceptors.response.use(
-      (response) => response,
-      async (error: unknown) => {
-        if (!axios.isAxiosError(error)) {
-          return Promise.reject(error);
-        }
-
-        const status = error.response?.status;
-        const originalRequest = error.config as (typeof error.config & { _csrfRetried?: boolean }) | undefined;
-
-        if (status === 419 && originalRequest && !originalRequest._csrfRetried) {
-          originalRequest._csrfRetried = true;
-          await this.fetchCsrfToken(true);
-
-          if (this.csrfToken) {
-            const retryHeaders = AxiosHeaders.from(originalRequest.headers);
-            retryHeaders.set('X-CSRF-TOKEN', this.csrfToken);
-            originalRequest.headers = retryHeaders;
-          }
-
-          return this.client.request(originalRequest);
-        }
-
-        return Promise.reject(error);
-      }
-    );
-  }
-
-  private async fetchCsrfToken(force = false) {
-    if (!force && this.csrfToken) {
-      return;
-    }
-    try {
-      const response = await axios.get<CsrfTokenResponse>(`${secrets.backendEndpoint || ''}/api/csrf-token`, {
-        withCredentials: true,
-      });
-      this.csrfToken = response.data.csrf_token ?? null;
-    } catch (error) {
-      console.warn('Failed to fetch CSRF token:', error);
-      // Fallback: try to get from meta tag
-      const metaToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-      if (metaToken) {
-        this.csrfToken = metaToken;
-      }
-    }
+    this.client.interceptors.response.use((response) => response, (error) => Promise.reject(error));
   }
 
   /* ── Auth ───────────────────────────────────────────────── */
@@ -203,10 +148,33 @@ class ApiClient {
     }
   }
 
+  async getInvitation(token: string): Promise<InvitationPreview> {
+    try {
+      const response = await this.client.get(`/api/auth/invitations/${encodeURIComponent(token)}`);
+      return response.data.invitation;
+    } catch (error: unknown) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  async registerInvited(token: string, password: string, password_confirmation: string) {
+    try {
+      const response = await this.client.post('/api/auth/register-invited', {
+        token,
+        password,
+        password_confirmation,
+      });
+      return response.data;
+    } catch (error: unknown) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
   async login(email: string, password: string) {
     try {
       const response = await this.client.post('/api/auth/login', { email, password });
-      await this.fetchCsrfToken(true);
       return response.data;
     } catch (error: unknown) {
       this.handleError(error);
@@ -242,7 +210,6 @@ class ApiClient {
   async loginWithRole(loginData: Record<string, string>) {
     try {
       const response = await this.client.post('/api/auth/login', loginData);
-      await this.fetchCsrfToken(true);
       return response.data;
     } catch (error: unknown) {
       this.handleError(error);
@@ -260,7 +227,6 @@ class ApiClient {
     try {
       const response = await this.client.post('/api/auth/logout');
       this.clearUserCache();
-      await this.fetchCsrfToken(true);
       return response.data;
     } catch (error: unknown) {
       this.clearUserCache();
@@ -574,6 +540,16 @@ class ApiClient {
     }
   }
 
+  async deleteAdminUser(userId: number) {
+    try {
+      const response = await this.client.delete(`/api/admin/users/${userId}`);
+      return response.data;
+    } catch (error: unknown) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
   async getOfficers() {
     try {
       const response = await this.client.get('/api/officers');
@@ -607,7 +583,7 @@ class ApiClient {
       if (axiosError.response) {
         const status = axiosError.response.status;
         const requestUrl = String(axiosError.config?.url || '');
-        const isAuthAttempt = /\/api\/auth\/(login|register)/.test(requestUrl);
+        const isAuthAttempt = /\/api\/auth\/(login|register|register-invited)/.test(requestUrl);
 
         if (status === 401 && !isAuthAttempt) {
           this.clearUserCache();

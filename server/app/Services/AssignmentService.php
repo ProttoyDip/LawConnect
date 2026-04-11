@@ -48,6 +48,12 @@ class AssignmentService
      */
     public function getAvailableOfficers()
     {
-        return User::whereHas('role', fn ($q) => $q->where('name', Role::POLICE))->get();
+        return User::whereHas('role', function ($query) {
+            $query->whereIn('name', [
+                Role::POLICE,
+                Role::OFFICER,
+                Role::INVESTIGATOR,
+            ]);
+        })->get();
     }
 }

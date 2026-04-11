@@ -43,7 +43,25 @@ export default function CaseDetailsInvestigator() {
       const data = await apiClient.getCaseDetails(Number(caseId));
       setCaseData(data.case);
       setNotes(data.notes || []);
-      setEvidence(data.case.evidenceFiles || []);
+
+      const normalizeEvidence = (item: any): EvidenceFile => ({
+        id: Number(item?.id || 0),
+        crime_report_id: Number(item?.crime_report_id || item?.crimeReportId || data.case?.id || 0),
+        uploaded_by: Number(item?.uploaded_by || item?.uploadedBy || 0),
+        file_path: String(item?.file_path || item?.filePath || ''),
+        file_name: String(item?.file_name || item?.original_name || item?.originalName || 'Evidence file'),
+        mime_type: String(item?.mime_type || ''),
+        file_size: Number(item?.file_size || item?.fileSize || 0),
+        created_at: String(item?.created_at || item?.createdAt || new Date().toISOString()),
+      });
+
+      const rawEvidence =
+        data?.case?.evidenceFiles ||
+        data?.case?.evidence_files ||
+        data?.case?.evidence ||
+        [];
+
+      setEvidence(Array.isArray(rawEvidence) ? rawEvidence.map(normalizeEvidence).filter((file: EvidenceFile) => Boolean(file.file_path)) : []);
       
       // Build activity timeline
       const timeline: ActivityItem[] = [];
@@ -60,7 +78,7 @@ export default function CaseDetailsInvestigator() {
       });
 
       // Notes
-      notes.forEach((note) => {
+      (data.notes || []).forEach((note: InvestigationNote) => {
         timeline.push({
           type: 'note',
           title: 'Investigation note added',
@@ -120,8 +138,40 @@ export default function CaseDetailsInvestigator() {
     }
   };
 
-  const downloadEvidence = (file: EvidenceFile) => {
-    window.open(`${secrets.backendEndpoint || ''}/storage/${file.file_path}`, '_blank');
+  const downloadEvidence = async (file: EvidenceFile) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        toast.error('Please sign in again to download evidence');
+        return;
+      }
+
+      const backendBase = (secrets.backendEndpoint || '').replace(/\/$/, '');
+      const fileUrl = `${backendBase}/api/evidence/${file.id}/download`;
+
+      const response = await fetch(fileUrl, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: '*/*',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Download failed');
+      }
+
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = objectUrl;
+      link.download = file.file_name || 'evidence-file';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(objectUrl);
+    } catch {
+      toast.error('Failed to download evidence');
+    }
   };
 
   if (loading) {

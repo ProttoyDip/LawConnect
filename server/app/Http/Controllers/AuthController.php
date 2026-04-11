@@ -7,10 +7,10 @@ use App\Http\Requests\RegisterRequest;
 use App\Http\Resources\UserResource;
 use App\Models\Role;
 use App\Models\User;
+use App\Models\UserInvitation;
 use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
@@ -82,11 +82,11 @@ class AuthController extends Controller
      */
     public function login(LoginRequest $request): JsonResponse
     {
-        if (!Auth::attempt($request->only('email', 'password'))) {
+        $user = User::where('email', $request->email)->with('role')->first();
+
+        if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json(['message' => 'Invalid credentials.'], 401);
         }
-
-        $user = Auth::user()->load('role');
 
         $token = $user->createToken('auth-token')->plainTextToken;
 
@@ -104,9 +104,6 @@ class AuthController extends Controller
     {
         try {
             $request->user()?->tokens()->delete(); // Revoke all tokens
-            // Default guard for API requests may be Sanctum's RequestGuard (no logout method).
-            // Use the session-capable web guard explicitly when ending browser sessions.
-            Auth::guard('web')->logout();
             if ($request->hasSession()) {
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();
@@ -152,5 +149,95 @@ class AuthController extends Controller
             'message' => 'Profile updated successfully.',
             'user' => new UserResource($user->load('role')),
         ]);
+    }
+
+    /**
+     * GET /auth/invitations/{token}
+     */
+    public function showInvitation(string $token): JsonResponse
+    {
+        $invitation = UserInvitation::query()
+            ->where('token', $token)
+            ->first();
+
+        if (!$invitation || $invitation->accepted_at) {
+            return response()->json([
+                'message' => 'Invitation is invalid or already used.',
+            ], 404);
+        }
+
+        if ($invitation->isExpired()) {
+            return response()->json([
+                'message' => 'Invitation has expired.',
+            ], 410);
+        }
+
+        return response()->json([
+            'invitation' => [
+                'name' => $invitation->name,
+                'email' => $invitation->email,
+                'role' => $invitation->role?->name,
+                'phone' => $invitation->phone,
+                'address' => $invitation->address,
+            ],
+        ]);
+    }
+
+    /**
+     * POST /auth/register-invited
+     */
+    public function registerInvited(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'token' => 'required|string',
+            'password' => 'required|min:8|confirmed',
+            'password_confirmation' => 'required',
+        ]);
+
+        $invitation = UserInvitation::query()
+            ->where('token', $validated['token'])
+            ->first();
+
+        if (!$invitation || $invitation->accepted_at) {
+            return response()->json([
+                'message' => 'Invitation is invalid or already used.',
+            ], 404);
+        }
+
+        if ($invitation->isExpired()) {
+            return response()->json([
+                'message' => 'Invitation has expired.',
+            ], 410);
+        }
+
+        if (User::where('email', $invitation->email)->exists()) {
+            return response()->json([
+                'message' => 'A user with this email already exists.',
+            ], 409);
+        }
+
+        $user = User::create([
+            'name' => $invitation->name,
+            'email' => $invitation->email,
+            'national_id' => $invitation->national_id,
+            'badge_number' => $invitation->badge_number,
+            'police_station' => $invitation->police_station,
+            'password' => Hash::make($validated['password']),
+            'role_id' => $invitation->role_id,
+            'phone' => $invitation->phone,
+            'address' => $invitation->address,
+        ]);
+
+        $invitation->update([
+            'accepted_at' => now(),
+        ]);
+
+        $token = $user->createToken('auth-token')->plainTextToken;
+
+        return response()->json([
+            'message' => 'Registration successful.',
+            'user' => new UserResource($user->load('role')),
+            'token' => $token,
+        ], 201);
     }
 }

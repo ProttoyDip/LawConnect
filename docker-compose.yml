@@ -18,7 +18,7 @@ services:
         DB_PORT: '3306'
         DB_DATABASE: 'lawconnect'
         DB_USERNAME: 'root'
-        DB_PASSWORD: 'root'
+        DB_PASSWORD: 'root123'
     ports:
       - '8000:80'
     depends_on:
@@ -32,11 +32,25 @@ services:
     restart: always
     environment:
       MYSQL_DATABASE: lawconnect
-      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: root123
     ports:
-      - '3306:3306'
+      - '3307:3306'
     volumes:
       - mysql_data:/var/lib/mysql
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    restart: always
+    depends_on:
+      - db
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_USER: root
+      PMA_PASSWORD: root123
+      PMA_ABSOLUTE_URI: http://127.0.0.1:8080/
+    ports:
+      - '8080:80'
 
 volumes:
   mysql_data:

@@ -83,10 +83,7 @@ RUN chown -R www-data:www-data /var/www/html && chmod -R 775 /var/www/html/stora
 # RUN ls -a
 # RUN echo "hello wrld"
 
-RUN cd client && npm install && npm run build
-
-# # Move React build to Laravel public directory
-RUN cp -r client/dist/* public/
+RUN cd client && npm install && npm run build -- --outDir ../public/build
 
 # # Expose port 80 for Apache
 EXPOSE 80
