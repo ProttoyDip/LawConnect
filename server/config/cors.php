@@ -19,9 +19,17 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['*'],
+    'allowed_origins' => [
+        'http://localhost:3000',
+        'http://localhost:5173',
+        'https://law-connect-bd.vercel.app',
+        'https://law-connect-dcci203mc-prottoydips-projects.vercel.app',
+        env('FRONTEND_URL', 'http://localhost:3000'),
+    ],
 
-    'allowed_origins_patterns' => [],
+    'allowed_origins_patterns' => [
+        '#https://law-connect-.*\.vercel\.app#',
+    ],
 
     'allowed_headers' => ['*'],
 
@@ -29,6 +37,6 @@ return [
 
     'max_age' => 0,
 
-    'supports_credentials' => false,
+    'supports_credentials' => true,
 
 ];
