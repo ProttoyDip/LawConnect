@@ -8,6 +8,7 @@ import { FormGroup, FormLabel, FormSelect, FormTextarea } from '../components/ui
 import ApiClient, { CrimeReport, User } from '../api';
 import toast from 'react-hot-toast';
 import PageTransition from '../components/PageTransition';
+import { isAdminRole } from '../utils/roles';
 
 const apiClient = new ApiClient();
 
@@ -86,7 +87,7 @@ export default function ReportList({ myReports = false }: Props) {
     }
   };
 
-  const canUpdateStatus = user && (user.role === 'police' || user.role === 'admin');
+  const canUpdateStatus = user && (user.role === 'police' || isAdminRole(user.role));
 
   if (loading) {
     return (

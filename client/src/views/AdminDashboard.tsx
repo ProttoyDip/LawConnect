@@ -15,6 +15,7 @@ import OverviewCards from '../components/Dashboard/Admin/OverviewCards';
 import AnalyticsCharts from '../components/Dashboard/Admin/AnalyticsCharts';
 import CaseManagement from '../components/Dashboard/Admin/CaseManagement';
 import UserManagement from '../components/Dashboard/Admin/UserManagement';
+import { isAdminRole } from '../utils/roles';
 import { 
   Plus, 
   UserPlus, 
@@ -108,7 +109,7 @@ export default function AdminDashboard() {
       try {
         const userData = await apiClient.getMe(true);
         setUser(userData);
-        if (userData.role !== 'admin') {
+        if (!isAdminRole(userData.role)) {
           navigate('/dashboard');
         }
       } catch (error) {
@@ -128,7 +129,7 @@ export default function AdminDashboard() {
   }, [navigate]);
 
   useEffect(() => {
-    if (user?.role === 'admin') {
+    if (isAdminRole(user?.role)) {
       fetchAnalytics();
       fetchData();
       fetchNotifications();
