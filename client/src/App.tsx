@@ -1,4 +1,4 @@
-import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom';
+﻿import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { ReactNode } from 'react';
 import BaseLayout from './views/BaseLayout';
@@ -189,4 +189,3 @@ function App() {
 }
 
 export default App;
-
