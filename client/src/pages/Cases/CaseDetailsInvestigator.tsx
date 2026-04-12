@@ -157,7 +157,13 @@ export default function CaseDetailsInvestigator() {
       });
 
       if (!response.ok) {
-        throw new Error('Download failed');
+        let details = '';
+        try {
+          details = await response.text();
+        } catch {
+          // Ignore response body parsing issues for binary endpoints.
+        }
+        throw new Error(details || `Download failed with status ${response.status}`);
       }
 
       const blob = await response.blob();
@@ -169,8 +175,9 @@ export default function CaseDetailsInvestigator() {
       link.click();
       link.remove();
       URL.revokeObjectURL(objectUrl);
-    } catch {
-      toast.error('Failed to download evidence');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to download evidence';
+      toast.error(message);
     }
   };
 

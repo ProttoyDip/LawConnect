@@ -1,5 +1,15 @@
 <?php
 
+$frontendUrl = env('FRONTEND_URL', 'http://localhost:3000');
+$configuredOrigins = array_filter(array_map('trim', explode(',', (string) env('CORS_ALLOWED_ORIGINS', ''))));
+
+$defaultOrigins = [
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'https://law-connect-bd.vercel.app',
+    $frontendUrl,
+];
+
 return [
 
     /*
@@ -20,11 +30,7 @@ return [
     'allowed_methods' => ['*'],
 
     'allowed_origins' => [
-        'http://localhost:3000',
-        'http://localhost:5173',
-        'https://law-connect-bd.vercel.app',
-        'https://law-connect-dcci203mc-prottoydips-projects.vercel.app',
-        env('FRONTEND_URL', 'http://localhost:3000'),
+        ...array_values(array_unique(array_merge($defaultOrigins, $configuredOrigins))),
     ],
 
     'allowed_origins_patterns' => [

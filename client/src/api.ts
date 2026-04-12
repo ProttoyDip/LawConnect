@@ -610,9 +610,9 @@ class ApiClient {
       }
 
       if (axiosError.request) {
-        const apiBase = this.client.defaults.baseURL || window.location.origin;
+        const apiBase = this.client.defaults.baseURL || '(not configured)';
         console.error('API Error: No response received', axiosError.request);
-        toast.error(`Cannot reach API server (${apiBase}). Make sure backend is running.`);
+        toast.error(`Cannot reach API server (${apiBase}). Check VITE_BACKEND_ENDPOINT and backend health.`);
         return;
       }
 

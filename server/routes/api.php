@@ -39,6 +39,10 @@ Route::prefix('auth')->group(function () {
     Route::post('/register-invited', [AuthController::class, 'registerInvited']);
 });
 
+// Compatibility aliases for clients expecting /api/login and /api/register.
+Route::post('/register', [AuthController::class, 'register']);
+Route::post('/login', [AuthController::class, 'login']);
+
 // ── Authenticated ──────────────────────────────────────────
 Route::middleware(['auth:sanctum', 'log.api'])->group(function () {
 
@@ -73,7 +77,7 @@ Route::middleware(['auth:sanctum', 'log.api'])->group(function () {
 
     // Crime Reports – citizen creates, views own
     Route::post('/crime-report',    [CrimeReportController::class, 'store'])->middleware('role:citizen');
-    Route::get('/my-reports',       [CrimeReportController::class, 'myReports']); // TEMP: removed role middleware for testing
+    Route::get('/my-reports',       [CrimeReportController::class, 'myReports'])->middleware('role:citizen');
 
     // Crime Reports – single report (ownership enforced by policy)
     Route::get('/crime-report/{id}',  [CrimeReportController::class, 'show'])->middleware('case.owner');
