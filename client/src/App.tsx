@@ -19,6 +19,7 @@ import UserProfile from './pages/Profile/UserProfile';
 import NotFound from './pages/Errors/NotFound';
 import ServerError from './pages/Errors/ServerError';
 import Navbar from './components/Navbar';
+import ApiHealthBanner from './components/ApiHealthBanner';
 import ErrorBoundary from './components/ErrorBoundary';
 import { getRoleHomePath, isUserRole, type UserRole } from './utils/roles';
 import './index.css';
@@ -115,6 +116,8 @@ function App() {
   return (
     <ErrorBoundary>
       <>
+        <ApiHealthBanner />
+
         {/* Show Navbar on public pages */}
         {showNavbar && <Navbar />}
 

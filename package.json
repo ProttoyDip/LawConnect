@@ -9,7 +9,8 @@
     "start:server": "cd server && php artisan serve",
     "build:client": "cd client && npm run build",
     "copy:client": "cp -r client/dist/* server/public/",
-    "build:prod": "npm run build:client && npm run copy:client"
+    "build:prod": "npm run build:client && npm run copy:client",
+    "smoke:api": "node scripts/smoke-api.mjs"
   },
   "keywords": [],
   "author": "Ali Ahnaf",

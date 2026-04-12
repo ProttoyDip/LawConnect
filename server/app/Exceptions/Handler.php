@@ -53,6 +53,8 @@ class Handler extends ExceptionHandler
      */
     public function render($request, Throwable $exception)
     {
+        $isDebug = config('app.debug');
+
         if ($exception instanceof AuthenticationException) {
             return response()->json([
                 'success' => false,
@@ -92,19 +94,25 @@ class Handler extends ExceptionHandler
             ], $exception->getStatusCode());
         }
 
-        // Everything else — expose the real message for debugging
+        // Everything else.
         $status = method_exists($exception, 'getStatusCode')
             ? $exception->getStatusCode()
             : 500;
 
-        return response()->json([
-            'success'   => false,
-            'message'   => $exception->getMessage() ?: 'An unexpected error occurred.',
-            'exception' => get_class($exception),
-            'file'      => $exception->getFile(),
-            'line'      => $exception->getLine(),
-            // Remove 'trace' in production; keep for debugging:
-            'trace'     => collect($exception->getTrace())->take(5)->toArray(),
-        ], $status);
+        $payload = [
+            'success' => false,
+            'message' => $isDebug
+                ? ($exception->getMessage() ?: 'An unexpected error occurred.')
+                : 'Internal server error.',
+        ];
+
+        if ($isDebug) {
+            $payload['exception'] = get_class($exception);
+            $payload['file'] = $exception->getFile();
+            $payload['line'] = $exception->getLine();
+            $payload['trace'] = collect($exception->getTrace())->take(5)->toArray();
+        }
+
+        return response()->json($payload, $status);
     }
 }
