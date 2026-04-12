@@ -1,9 +1,73 @@
 const { pool } = require('../config/db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 
 const DEFAULT_ROLE = 'citizen';
 const FIXED_ADMIN_NAME = 'Super Administrator';
+let passwordResetTableReady = false;
+
+function getFrontendUrl() {
+  return (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/+$/, '');
+}
+
+function getMailFromAddress() {
+  return process.env.MAIL_FROM_ADDRESS || process.env.MAIL_USERNAME || 'no-reply@lawconnect.local';
+}
+
+function getMailFromName() {
+  return process.env.MAIL_FROM_NAME || 'LawConnect';
+}
+
+function getResetTokenTtlMinutes() {
+  const value = Number(process.env.PASSWORD_RESET_EXPIRES_MINUTES || 60);
+  return Number.isFinite(value) && value > 0 ? value : 60;
+}
+
+function getResetTokenHash(rawToken) {
+  return crypto.createHash('sha256').update(rawToken).digest('hex');
+}
+
+function createMailTransport() {
+  const host = process.env.MAIL_HOST;
+  const port = Number(process.env.MAIL_PORT || 587);
+  const user = process.env.MAIL_USERNAME;
+  const pass = process.env.MAIL_PASSWORD;
+
+  if (!host || !user || !pass) {
+    return null;
+  }
+
+  const secure = String(process.env.MAIL_ENCRYPTION || '').toLowerCase() === 'ssl' || port === 465;
+
+  return nodemailer.createTransport({
+    host,
+    port,
+    secure,
+    auth: {
+      user,
+      pass,
+    },
+  });
+}
+
+async function ensurePasswordResetsTable() {
+  if (passwordResetTableReady) {
+    return;
+  }
+
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS password_resets (
+      email VARCHAR(255) NOT NULL,
+      token VARCHAR(255) NOT NULL,
+      created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+      INDEX password_resets_email_index (email)
+    ) ENGINE=InnoDB
+  `);
+
+  passwordResetTableReady = true;
+}
 
 function getJwtSecret() {
   return process.env.JWT_SECRET || 'lawconnect-dev-secret-change-in-production';
@@ -142,6 +206,115 @@ async function loginUser(req, res, next) {
       },
       token,
     });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+async function forgotPassword(req, res, next) {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required.' });
+    }
+
+    const normalizedEmail = String(email).trim().toLowerCase();
+    if (!normalizedEmail || !normalizedEmail.includes('@')) {
+      return res.status(422).json({ message: 'A valid email address is required.' });
+    }
+
+    await ensurePasswordResetsTable();
+
+    const [rows] = await pool.execute('SELECT id FROM users WHERE email = ? LIMIT 1', [normalizedEmail]);
+    if (!rows[0]) {
+      return res.status(200).json({ message: 'If an account exists, reset instructions have been sent.' });
+    }
+
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const tokenHash = getResetTokenHash(rawToken);
+
+    await pool.execute('DELETE FROM password_resets WHERE email = ?', [normalizedEmail]);
+    await pool.execute('INSERT INTO password_resets (email, token, created_at) VALUES (?, ?, NOW())', [
+      normalizedEmail,
+      tokenHash,
+    ]);
+
+    const resetUrl = `${getFrontendUrl()}/password-reset/${encodeURIComponent(rawToken)}?email=${encodeURIComponent(
+      normalizedEmail
+    )}`;
+
+    const transport = createMailTransport();
+    if (!transport) {
+      return res.status(503).json({ message: 'Email service is not configured on the server.' });
+    }
+
+    await transport.sendMail({
+      from: `${getMailFromName()} <${getMailFromAddress()}>`,
+      to: normalizedEmail,
+      subject: 'LawConnect password reset',
+      text: `We received a request to reset your password.\n\nUse this link to reset it:\n${resetUrl}\n\nThis link expires in ${getResetTokenTtlMinutes()} minutes.`,
+      html: `<p>We received a request to reset your password.</p><p><a href="${resetUrl}">Reset Password</a></p><p>This link expires in ${getResetTokenTtlMinutes()} minutes.</p>`,
+    });
+
+    return res.status(200).json({ message: 'Password reset instructions sent to your email.' });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+async function resetPassword(req, res, next) {
+  try {
+    const { token, email, password, password_confirmation } = req.body;
+
+    if (!token || !email || !password || !password_confirmation) {
+      return res.status(400).json({ message: 'token, email, password and password_confirmation are required.' });
+    }
+
+    if (password !== password_confirmation) {
+      return res.status(422).json({ message: 'Password confirmation does not match.' });
+    }
+
+    if (String(password).length < 8) {
+      return res.status(422).json({ message: 'Password must be at least 8 characters.' });
+    }
+
+    const normalizedEmail = String(email).trim().toLowerCase();
+    const [rows] = await pool.execute(
+      'SELECT email, token, created_at FROM password_resets WHERE email = ? ORDER BY created_at DESC LIMIT 1',
+      [normalizedEmail]
+    );
+    const resetRow = rows[0];
+
+    if (!resetRow) {
+      return res.status(404).json({ message: 'Reset token not found for this email.' });
+    }
+
+    const tokenAgeMs = Date.now() - new Date(resetRow.created_at).getTime();
+    const expiresInMs = getResetTokenTtlMinutes() * 60 * 1000;
+    if (!Number.isFinite(tokenAgeMs) || tokenAgeMs > expiresInMs) {
+      await pool.execute('DELETE FROM password_resets WHERE email = ?', [normalizedEmail]);
+      return res.status(410).json({ message: 'Reset token has expired. Please request a new one.' });
+    }
+
+    const providedHash = getResetTokenHash(String(token));
+    if (providedHash !== resetRow.token) {
+      return res.status(422).json({ message: 'Invalid reset token.' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 12);
+    const [updateResult] = await pool.execute('UPDATE users SET password = ? WHERE email = ?', [
+      hashedPassword,
+      normalizedEmail,
+    ]);
+
+    if (!updateResult.affectedRows) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    await pool.execute('DELETE FROM password_resets WHERE email = ?', [normalizedEmail]);
+
+    return res.status(200).json({ message: 'Password reset successful.' });
   } catch (error) {
     return next(error);
   }
@@ -375,6 +548,8 @@ module.exports = {
   ensureFixedSuperAdminAccount,
   registerAuthUser,
   loginUser,
+  forgotPassword,
+  resetPassword,
   getCurrentUser,
   logoutUser,
   getMyReports,

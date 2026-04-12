@@ -2,6 +2,8 @@ const express = require('express');
 const {
 	registerAuthUser,
 	loginUser,
+	forgotPassword,
+	resetPassword,
 	getCurrentUser,
 	logoutUser,
 	getCrimeReports,
@@ -25,6 +27,8 @@ const router = express.Router();
 
 router.post('/auth/register', registerAuthUser);
 router.post('/auth/login', loginUser);
+router.post('/auth/forgot-password', forgotPassword);
+router.post('/auth/reset-password', resetPassword);
 router.get('/auth/me', getCurrentUser);
 router.post('/auth/logout', logoutUser);
 router.get('/my-reports', getMyReports);
